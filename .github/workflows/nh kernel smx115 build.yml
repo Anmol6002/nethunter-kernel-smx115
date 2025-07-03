@@ -1,0 +1,53 @@
+name: Build NetHunter Kernel for SM-X115
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-kernel:
+    runs-on: ubuntu-latest
+    env:
+      DEVICE_CODENAME: gta9
+      DEFCONFIG: gta9_defconfig
+      KERNEL_SOURCES_ZIP: SM-X115_SWA_14_Opensource.zip
+
+    steps:
+    - name: Checkout project code
+      uses: actions/checkout@v3
+
+    - name: Extract kernel source
+      run: |
+        unzip $KERNEL_SOURCES_ZIP -d kernel_src
+        tar -xf kernel_src/Kernel.tar.gz -C kernel_src
+        mv kernel_src/kernel-5.10 linux
+
+    - name: Clone NetHunter Kernel Builder
+      run: |
+        git clone https://gitlab.com/kalilinux/nethunter/build-scripts/kali-nethunter-kernel-builder.git builder
+        cd builder && cp local.config.examples/generic.local.config local.config
+
+    - name: Configure local.config
+      run: |
+        cd builder
+        cat > local.config <<EOF
+        SOURCE_DIR=../linux
+        KERNEL_DEFCONFIG=$DEFCONFIG
+        KERNEL_ARCH=arm64
+        DEVICE_CODENAME=$DEVICE_CODENAME
+        BUILD_MODULES=1
+        ANYKERNEL=1
+        EOF
+
+    - name: Build Kernel
+      run: |
+        cd builder
+        ./build.sh <<EOF
+        S
+        2
+        EOF
+
+    - name: Collect and upload kernel zip
+      uses: actions/upload-artifact@v3
+      with:
+        name: NetHunter-Kernel-SMX115
+        path: builder/output/*.zip
