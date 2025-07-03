@@ -27,7 +27,7 @@ jobs:
           # Toolchains
           aosp-gcc: true
           aosp-clang: true
-          aosp-clang-version: r450784d
+          aosp-clang-version: r487747c
 
           # Enable full NetHunter & LXC features
           lxc: true
