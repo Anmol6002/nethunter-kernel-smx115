@@ -28,7 +28,8 @@ jobs:
     - name: Clone NetHunter Kernel Builder
       run: |
         git clone https://gitlab.com/kalilinux/nethunter/build-scripts/kali-nethunter-kernel-builder.git builder
-        cd builder && cp local.config.examples/generic.local.config local.config
+        cd builder && cp local.config.examples/default.local.config local.config
+
 
     - name: Configure local.config
       run: |
