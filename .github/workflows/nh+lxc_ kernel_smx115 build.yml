@@ -28,13 +28,9 @@ jobs:
           aosp-clang: false
           android-version: 14
 
-          # Use Proton Clang instead
-          other-clang-url: https://github.com/kdrag0n/proton-clang.git
-          other-clang-branch: master
-
-          # Use Mvaishakh Gcc instead 
-          other-gcc64-url: https://github.com/mvaisakh/gcc-arm64.git
-          other-gcc64-branch: master
+          # Use ZyCromerZ Clang instead
+          other-clang-url: https://github.com/ZyCromerZ/Clang.git
+          other-clang-branch: main
           
           # Enable Kali NetHunter and LXC features
           lxc: true
