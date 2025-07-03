@@ -15,6 +15,10 @@ jobs:
     - name: Checkout project code
       uses: actions/checkout@v3
 
+    - name: Download kernel source from release
+      run: |
+        wget https://github.com/Anmol6002/nethunter-kernel-smx115/releases/download/SM.x115/SM-X115_SWA_14_Opensource.zip -O SM-X115_SWA_14_Opensource.zip
+
     - name: Extract kernel source
       run: |
         unzip $KERNEL_SOURCES_ZIP -d kernel_src
