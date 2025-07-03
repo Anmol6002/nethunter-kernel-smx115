@@ -24,7 +24,7 @@ jobs:
           arch: arm64
           
           # Toolchains
-          aosp-gcc: false
+          aosp-gcc: true
           aosp-clang: false
           android-version: 14
 
@@ -32,9 +32,7 @@ jobs:
           other-clang-url: https://github.com/kdrag0n/proton-clang.git
           other-clang-branch: master
 
-          # Use public GCC64
-          other-gcc64-url: https://github.com/ClangBuiltLinux/gcc-arm64.git
-          other-gcc64-branch: master
+         
 
           
           # Enable Kali NetHunter and LXC features
