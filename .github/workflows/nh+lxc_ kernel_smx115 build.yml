@@ -28,9 +28,13 @@ jobs:
           aosp-clang: false
           android-version: 14
 
-          # Use ZyCromerZ Clang instead
-          other-clang-url: https://github.com/ZyCromerZ/Clang.git
+          # Use Anusm123 Clang instead
+          other-clang-url: https://github.com/Anusm123/Clang-17.git
           other-clang-branch: main
+          
+          # Use Clangbuiltlinux gcc
+          other-gcc64-url: https://github.com/ClangBuiltLinux/gcc-arm64.git
+          other-gcc64-branch: master
           
           # Enable Kali NetHunter and LXC features
           lxc: true
