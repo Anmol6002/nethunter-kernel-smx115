@@ -25,9 +25,11 @@ jobs:
           android-version: 14
 
           # Toolchains
-          aosp-gcc: true
+          aosp-gcc: false
           aosp-clang: true
           aosp-clang-version: r487747c
+          other-gcc64-url: https://github.com/your-gcc64-source/archive/refs/heads/main.zip
+          other-gcc64-branch: main
 
           # Enable full NetHunter & LXC features
           lxc: true
