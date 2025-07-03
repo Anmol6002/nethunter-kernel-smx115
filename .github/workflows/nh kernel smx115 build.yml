@@ -26,9 +26,9 @@ jobs:
         mv kernel_src/kernel-5.10 linux
 
     - name: Clone NetHunter Kernel Builder
-      run: |
-        git clone https://gitlab.com/kalilinux/nethunter/build-scripts/kali-nethunter-kernel-builder.git builder
-        cd builder && cp local.config.examples/default.local.config local.config
+  run: |
+    git clone https://gitlab.com/kalilinux/nethunter/build-scripts/kali-nethunter-kernel-builder.git builder
+    cd builder && cp local.config.examples/arm64.local.config local.config
 
 
     - name: Configure local.config
