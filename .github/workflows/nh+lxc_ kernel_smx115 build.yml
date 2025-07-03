@@ -1,0 +1,49 @@
+name: Build NetHunter Kernel
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-kernel:
+    name: Build Kernel
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v3
+
+      - name: Build using dabao1955 NetHunter kernel builder
+        uses: dabao1955/kernel_build_action@main
+        with:
+          # Your kernel source repo
+          kernel-url: https://github.com/Anmol6002/kernel_smx115_nethunter
+          kernel-branch: main
+
+          # Kernel build config
+          config: gta9_defconfig
+          arch: arm64
+          android-version: 14
+
+          # Toolchains
+          aosp-gcc: true
+          aosp-clang: true
+          aosp-clang-version: r450784d
+
+          # Enable full NetHunter & LXC features
+          lxc: true
+          lxc-patch: true
+          nethunter: true
+          nethunter-patch: true
+
+          # Package with AnyKernel3
+          anykernel3: true
+
+          # Release the result automatically
+          release: true
+          access-token: ${{ secrets.GITHUB_TOKEN }}
+
+          # Optional: enable ccache (faster rebuilds)
+          ccache: true
+
+          # Optional: disable LTO if errors (can prevent bootloops in some kernels)
+          disable-lto: false
