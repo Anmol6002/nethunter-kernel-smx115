@@ -23,13 +23,16 @@ jobs:
           # Kernel config
           config: gta9_defconfig
           arch: arm64
-          android-version: 14
+          android-version: true
+          
 
           # Toolchains
-          aosp-gcc: false                # Diabled 
-          aosp-clang: false            # Disable AOSP Clang (we're using custom)
+                  
+          aosp-clag: true
+          aosp-gcc: true
+         
           other-gcc64-url: https://github.com/mvaisakh/gcc-arm64.git
-          other-gcc64-branch: master
+          other-gcc64-branch: main
           other-clang-url: https://github.com/kdrag0n/proton-clang.git
           other-clang-branch: master
           extra-cmd: LLVM=1            # Required for building with LLVM toolchain
