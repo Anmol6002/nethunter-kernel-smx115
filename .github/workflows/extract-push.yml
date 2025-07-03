@@ -14,9 +14,13 @@ jobs:
         run: |
           wget https://github.com/Anmol6002/nethunter-kernel-smx115/releases/download/SM.x115/SM-X115_SWA_14_Opensource.zip
           unzip SM-X115_SWA_14_Opensource.zip
-          mkdir kernel-only
-          cp -r kernel-source/kernel-5.10 kernel-only/
-
+          - name: Extract Kernel.tar.gz
+            run: |
+              mkdir -p kernel-source
+              tar -xzf Kernel.tar.gz -C kernel-source
+              mkdir kernel-only
+              cp -r kernel-source/kernel-5.10 kernel-only/
+   
       - name: Push kernel-5.10 to separate repo
         env:
           GH_TOKEN: ${{ secrets.KERNEL_PUSH_TOKEN }}
