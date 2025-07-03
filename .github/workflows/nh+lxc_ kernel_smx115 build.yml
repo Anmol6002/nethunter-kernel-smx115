@@ -28,13 +28,14 @@ jobs:
           aosp-clang: false
           android-version: 14
 
-          # Use Anusm123 Clang instead
-          other-clang-url: https://github.com/Anusm123/Clang-17.git
-          other-clang-branch: main
-          
-          # Use Clangbuiltlinux gcc
+          # Use public Proton Clang
+          other-clang-url: https://github.com/kdrag0n/proton-clang.git
+          other-clang-branch: master
+
+          # Use public GCC64
           other-gcc64-url: https://github.com/ClangBuiltLinux/gcc-arm64.git
           other-gcc64-branch: master
+
           
           # Enable Kali NetHunter and LXC features
           lxc: true
