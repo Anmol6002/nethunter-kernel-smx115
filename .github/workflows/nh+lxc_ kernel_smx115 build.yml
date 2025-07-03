@@ -30,6 +30,8 @@ jobs:
           aosp-clang: false            # Disable AOSP Clang (we're using custom)
           other-clang-url: https://github.com/kdrag0n/proton-clang.git
           other-clang-branch: master
+          other-gcc64-url: https://github.com/mvaisakh/gcc-build.git
+          other-gcc64-branch: main
           extra-cmd: LLVM=1            # Required for building with LLVM toolchain
 
           # NetHunter support
