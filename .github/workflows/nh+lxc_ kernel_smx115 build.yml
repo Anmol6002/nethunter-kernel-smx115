@@ -28,7 +28,7 @@ jobs:
 
           # Toolchains
                   
-          aosp-clag: true
+          aosp-clang: true
           aosp-gcc: true
           aosp-clang-version: r383902
          
