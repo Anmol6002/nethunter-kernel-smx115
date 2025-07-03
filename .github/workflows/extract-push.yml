@@ -1,0 +1,32 @@
+name: Extract and Push Kernel Source
+
+on:
+  workflow_dispatch:
+
+jobs:
+  extract-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout current repo
+        uses: actions/checkout@v3
+
+      - name: Download and extract kernel ZIP
+        run: |
+          wget https://github.com/Anmol6002/nethunter-kernel-smx115/releases/download/SM.x115/SM-X115_SWA_14_Opensource.zip
+          unzip SM-X115_SWA_14_Opensource.zip
+          mkdir kernel-only
+          cp -r kernel-source/kernel-5.10 kernel-only/
+
+      - name: Push kernel-5.10 to separate repo
+        env:
+          GH_TOKEN: ${{ secrets.KERNEL_PUSH_TOKEN }}
+        run: |
+          cd kernel-only/kernel-5.10
+          git init
+          git config --global user.email "singha87025@gmail.com"
+          git config --global user.name "Anmol 6002"
+          git remote add origin https://Anmol6002:${GH_TOKEN}@github.com/Anmol6002/kernel_smx115_nethunter.git
+          git checkout -b main
+          git add .
+          git commit -m "Initial kernel source upload"
+          git push -u origin main --force
