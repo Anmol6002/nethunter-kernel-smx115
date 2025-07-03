@@ -23,8 +23,7 @@ jobs:
         mv kernel_src/kernel-5.10 linux
 
     - name: Clone Kali NetHunter Kernel Builder
-      run: |
-        git clone https://gitlab.com/kalilinux/nethunter/build-scripts/kali-nethunter-kernel-builder.git builder
+      run: git clone https://gitlab.com/kalilinux/nethunter/build-scripts/kali-nethunter-kernel-builder.git builder
 
     - name: Configure local.config
       run: |
@@ -38,13 +37,20 @@ jobs:
         ANYKERNEL=1
         EOF
 
-    - name: Set up environment (S), Apply patches (4), Build (2), and Package (6)
+    - name: Setup environment & download toolchains
       run: |
         cd builder
-        yes S | ./build.sh
-        yes 4 | ./build.sh || echo "Patching failed, continuing..."
-        yes 2 | ./build.sh
-        yes 6 | ./build.sh
+        ./build/envsetup.sh
+
+    - name: Apply NetHunter Kernel Patches
+      run: |
+        cd builder
+        ./build/patch.sh
+
+    - name: Compile Kernel from scratch
+      run: |
+        cd builder
+        ./build/build_kernel.sh
 
     - name: Upload Kernel ZIP to Artifacts
       uses: actions/upload-artifact@v4
