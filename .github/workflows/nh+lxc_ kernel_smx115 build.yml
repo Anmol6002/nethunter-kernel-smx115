@@ -31,8 +31,11 @@ jobs:
           # Use Proton Clang instead
           other-clang-url: https://github.com/kdrag0n/proton-clang.git
           other-clang-branch: master
-          
 
+          # Use Mvaishakh Gcc instead 
+          other-gcc64-url: https://github.com/mvaisakh/gcc-arm64.git
+          other-gcc64-branch: master
+          
           # Enable Kali NetHunter and LXC features
           lxc: true
           lxc-patch: true
