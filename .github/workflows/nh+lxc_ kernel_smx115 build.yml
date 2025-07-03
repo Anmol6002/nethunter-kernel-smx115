@@ -5,33 +5,46 @@ on:
 
 jobs:
   build-kernel:
+    name: Build Kernel
     runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v3
 
-      - name: Build using dabao1955 kernel builder
+    steps:
+      - name: Checkout this repo
+        uses: actions/checkout@v3
+
+      - name: Build using dabao1955 NetHunter kernel builder
         uses: dabao1955/kernel_build_action@main
         with:
+          # Kernel source
           kernel-url: https://github.com/Anmol6002/kernel_smx115_nethunter
           kernel-branch: main
+          
+
+          # Kernel config
           config: gta9_defconfig
           arch: arm64
           android-version: 14
 
-          # Use bundled toolchains
-          aosp-gcc: true
-          aosp-clang: true
-          aosp-clang-version: r450784d  # a valid release tag
+          # Toolchains
+          aosp-gcc: false                # Diabled 
+          aosp-clang: false            # Disable AOSP Clang (we're using custom)
+          other-clang-url: https://github.com/kdrag0n/proton-clang.git
+          other-clang-branch: master
+          extra-cmd: LLVM=1            # Required for building with LLVM toolchain
 
-          # Enable NetHunter & LXC
+          # NetHunter support
           lxc: true
           lxc-patch: true
           nethunter: true
           nethunter-patch: true
 
-          # Extras
+          # Optimization
           ccache: true
           disable-lto: false
+
+          # AnyKernel3 packaging
           anykernel3: true
+
+          # Auto-release
           release: true
           access-token: ${{ secrets.GITHUB_TOKEN }}
