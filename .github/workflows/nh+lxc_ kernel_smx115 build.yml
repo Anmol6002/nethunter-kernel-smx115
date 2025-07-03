@@ -27,7 +27,7 @@ jobs:
           aosp-gcc: true
           aosp-clang: true
           android-version: 14
-          aosp-clang-version: r487747c
+          aosp-clang-version: r487747
 
           # Enable Kali NetHunter and LXC features
           lxc: true
