@@ -13,11 +13,11 @@ jobs:
 
     steps:
     - name: Checkout project code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
-    - name: Download kernel source from release
+    - name: Download kernel source zip from GitHub Release
       run: |
-        wget https://github.com/Anmol6002/nethunter-kernel-smx115/releases/download/SM.x115/SM-X115_SWA_14_Opensource.zip -O SM-X115_SWA_14_Opensource.zip
+        wget https://github.com/Anmol6002/nethunter-kernel-smx115/releases/download/SM.x115/${KERNEL_SOURCES_ZIP}
 
     - name: Extract kernel source
       run: |
@@ -28,20 +28,16 @@ jobs:
     - name: Clone NetHunter Kernel Builder
       run: |
         git clone https://gitlab.com/kalilinux/nethunter/build-scripts/kali-nethunter-kernel-builder.git builder
-        cd builder && cp local.config.examples/arm64.local.config local.config
-
+        cp builder/config builder/local.config
 
     - name: Configure local.config
       run: |
-        cd builder
-        cat > local.config <<EOF
-        SOURCE_DIR=../linux
-        KERNEL_DEFCONFIG=$DEFCONFIG
-        KERNEL_ARCH=arm64
-        DEVICE_CODENAME=$DEVICE_CODENAME
-        BUILD_MODULES=1
-        ANYKERNEL=1
-        EOF
+        echo "SOURCE_DIR=../linux" > builder/local.config
+        echo "KERNEL_DEFCONFIG=$DEFCONFIG" >> builder/local.config
+        echo "KERNEL_ARCH=arm64" >> builder/local.config
+        echo "DEVICE_CODENAME=$DEVICE_CODENAME" >> builder/local.config
+        echo "BUILD_MODULES=1" >> builder/local.config
+        echo "ANYKERNEL=1" >> builder/local.config
 
     - name: Build Kernel
       run: |
@@ -51,7 +47,7 @@ jobs:
         2
         EOF
 
-    - name: Collect and upload kernel zip
+    - name: Upload compiled kernel
       uses: actions/upload-artifact@v4
       with:
         name: NetHunter-Kernel-SMX115
