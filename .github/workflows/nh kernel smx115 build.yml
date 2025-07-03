@@ -43,9 +43,9 @@ jobs:
       run: |
         cd builder
         ./build.sh <<EOF
-S
-2
-EOF
+         S
+         2
+         EOF
 
     - name: Upload kernel zip
       uses: actions/upload-artifact@v4
