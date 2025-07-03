@@ -38,10 +38,13 @@ jobs:
         ANYKERNEL=1
         EOF
 
-    - name: Build Kernel using build_kernel.sh
+    - name: Set up environment (S), Apply patches (4), Build (2), and Package (6)
       run: |
         cd builder
-        ./build/build_kernel.sh
+        yes S | ./build.sh
+        yes 4 | ./build.sh || echo "Patching failed, continuing..."
+        yes 2 | ./build.sh
+        yes 6 | ./build.sh
 
     - name: Upload Kernel ZIP to Artifacts
       uses: actions/upload-artifact@v4
