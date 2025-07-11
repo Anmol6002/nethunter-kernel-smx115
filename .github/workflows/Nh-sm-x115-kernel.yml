@@ -39,17 +39,21 @@ jobs:
     - name: 🧪 Disable ABI check
       run: echo "KCFLAGS=-DIGNORE_ABI_CHECKS" >> $GITHUB_ENV
 
-    - name: Compile Kernel & Modules
+    - name: 🧪 Disable ABI check
+      run: echo "KCFLAGS=-DIGNORE_ABI_CHECKS" >> $GITHUB_ENV
+
+    - name: 🛠️ Compile Kernel & Modules
       working-directory: kernel
       run: |
-        export ARCH=arm64
-        export SUBARCH=arm64
-        export CROSS_COMPILE=${{ env.CROSS_COMPILE }}
-        make gta9_defconfig
-        make -j$(nproc)
-        make modules -j$(nproc)
-        mkdir -p ../out/modules_install
-        make INSTALL_MOD_PATH=../out/modules_install modules_install
+       export ARCH=arm64
+       export SUBARCH=arm64
+       export CROSS_COMPILE=${{ env.CROSS_COMPILE }}
+       export KCFLAGS=$KCFLAGS
+       make gta9_defconfig
+       make -j$(nproc)
+       make modules -j$(nproc)
+       mkdir -p ../out/modules_install
+       make INSTALL_MOD_PATH=../out/modules_install modules_install
 
     - name: 📦 Pack modules.tar.gz
       run: |
