@@ -42,27 +42,27 @@ jobs:
        export ARCH=arm64
        export SUBARCH=arm64
        export CROSS_COMPILE=${{ env.CROSS_COMPILE }}
-
+    
        mkdir -p out/abi
        touch out/abi/abi_symbollist.raw
-       export KBUILD_ABI_WHITELIST=out/abi/abi_symbollist.raw
+       echo "KBUILD_ABI_WHITELIST=out/abi/abi_symbollist.raw" >> $GITHUB_ENV
 
        export KCFLAGS=-DIGNORE_ABI_CHECKS
 
-       make gta9_defconfig
+       make KCFLAGS=$KCFLAGS gta9_defconfig
 
        ./scripts/config --file .config --enable CONFIG_MFD_MT6366
        ./scripts/config --file .config --enable CONFIG_SND_SOC_MT6366
        ./scripts/config --file .config --enable CONFIG_SND_SOC_MT6789
        ./scripts/config --file .config --enable CONFIG_SND_SOC_MT6789_MT6366
 
-       make olddefconfig
+        make KCFLAGS=$KCFLAGS olddefconfig
 
-       make -j$(nproc)
-       make modules -j$(nproc)
+        make KCFLAGS=$KCFLAGS -j$(nproc)
+        make KCFLAGS=$KCFLAGS modules -j$(nproc)
 
-       mkdir -p ../out/modules_install
-       make INSTALL_MOD_PATH=../out/modules_install modules_install
+        mkdir -p ../out/modules_install
+        make KCFLAGS=$KCFLAGS INSTALL_MOD_PATH=../out/modules_install modules_install
 
     
 
