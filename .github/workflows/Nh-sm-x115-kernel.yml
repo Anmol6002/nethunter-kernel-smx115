@@ -36,24 +36,30 @@ jobs:
         curl -sSL https://raw.githubusercontent.com/Anmol6002/nethunter-kernel-smx115/main/gta9_defconfig_patched.config >> $DEFCONFIG
         echo -e "# --- End Patch ---\n" >> $DEFCONFIG
 
-    
-   
-
-    - name: 🧪 Disable ABI check
-      run: echo "KCFLAGS=-DIGNORE_ABI_CHECKS" >> $GITHUB_ENV
-
     - name: 🛠️ Compile Kernel & Modules
       working-directory: kernel
       run: |
        export ARCH=arm64
        export SUBARCH=arm64
        export CROSS_COMPILE=${{ env.CROSS_COMPILE }}
-       export KCFLAGS=$KCFLAGS
-       make gta9_defconfig
-       make -j$(nproc)
-       make modules -j$(nproc)
+
+       make KCFLAGS=-DIGNORE_ABI_CHECKS gta9_defconfig
+
+       ./scripts/config --file .config --enable CONFIG_MFD_MT6366
+       ./scripts/config --file .config --enable CONFIG_SND_SOC_MT6366
+       ./scripts/config --file .config --enable CONFIG_SND_SOC_MT6789
+       ./scripts/config --file .config --enable CONFIG_SND_SOC_MT6789_MT6366
+
+       make KCFLAGS=-DIGNORE_ABI_CHECKS olddefconfig
+
+       make KCFLAGS=-DIGNORE_ABI_CHECKS -j$(nproc)
+       make KCFLAGS=-DIGNORE_ABI_CHECKS modules -j$(nproc)
+
        mkdir -p ../out/modules_install
-       make INSTALL_MOD_PATH=../out/modules_install modules_install
+       make KCFLAGS=-DIGNORE_ABI_CHECKS INSTALL_MOD_PATH=../out/modules_install modules_install
+   
+
+    
 
     - name: 📦 Pack modules.tar.gz
       run: |
