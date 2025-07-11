@@ -36,8 +36,8 @@ jobs:
         curl -sSL https://raw.githubusercontent.com/Anmol6002/nethunter-kernel-smx115/main/gta9_defconfig_patched.config >> $DEFCONFIG
         echo -e "# --- End Patch ---\n" >> $DEFCONFIG
 
-    - name: 🧪 Disable ABI check
-      run: echo "KCFLAGS=-DIGNORE_ABI_CHECKS" >> $GITHUB_ENV
+    
+   
 
     - name: 🧪 Disable ABI check
       run: echo "KCFLAGS=-DIGNORE_ABI_CHECKS" >> $GITHUB_ENV
