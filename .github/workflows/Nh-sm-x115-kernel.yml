@@ -1,100 +1,87 @@
-name: Build Kali NetHunter Kernel for SM-X115
+name: Build NetHunter Kernel for SM-X115
 
 on:
   workflow_dispatch:
 
 jobs:
   build:
-    name: Compile Kernel & Create Magisk Flashable ZIP
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
-    - name: 📥 Clone Kernel Source
-      uses: actions/checkout@v4
-      with:
-        repository: Anmol6002/kernel_source_sm-x115
-        ref: main
-        path: kernel
+      - name: 📥 Checkout Patch Repo (this repo)
+        uses: actions/checkout@v3
 
-    - name: 🧰 Install Build Dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y bc bison flex libssl-dev libncurses5-dev \
-          libelf-dev build-essential git wget cpio rsync zip unzip python3
+      - name: 📥 Clone Kernel Source
+        run: |
+          git clone --depth=1 https://github.com/Anmol6002/kernel_source_sm-x115 kernel-source
 
-    - name: 🔧 Clone AOSP GCC Toolchain
-      run: |
-        git clone --depth=1 https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 \
-          -b android10-release toolchain64
-        echo "CROSS_COMPILE=$(pwd)/toolchain64/bin/aarch64-linux-android-" >> $GITHUB_ENV
+      - name: 🛠️ Install Dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y build-essential bc bison flex libssl-dev \
+            libncurses5-dev libncursesw5-dev git python3 rsync \
+            cpio lzop ccache libelf-dev zip
 
-    - name: 🩹 Patch defconfig with NetHunter configs
-      working-directory: kernel
-      run: |
-        DEFCONFIG="arch/arm64/configs/gta9_defconfig"
-        echo -e "\n# --- NetHunter Config Patches ---" >> $DEFCONFIG
-        curl -sSL https://raw.githubusercontent.com/Anmol6002/nethunter-kernel-smx115/main/gta9_defconfig_patched.config >> $DEFCONFIG
-        echo -e "# --- End Patch ---\n" >> $DEFCONFIG
+      - name: 🔧 Setup Toolchain
+        run: |
+          git clone --depth=1 -b android10-release https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 toolchain64
+          echo "TOOLCHAIN=$GITHUB_WORKSPACE/toolchain/bin/aarch64-linux-android-" >> $GITHUB_ENV
 
-    - name: 🔧 Create Dummy ABI File to Fix Error
-      working-directory: kernel
-      run: |
-        mkdir -p out/target/product/gta9/obj/KERNEL_OBJ/kernel-5.10
-        touch out/target/product/gta9/obj/KERNEL_OBJ/kernel-5.10/abi_symbollist.raw
+      - name: 🧩 Merge Patched Config
+        run: |
+          cd kernel-source
+          export ARCH=arm64
+          export SUBARCH=arm64
+          export CROSS_COMPILE=$TOOLCHAIN
 
-    - name: 🛠️ Compile Kernel & Modules
-      working-directory: kernel
-      run: |
-        export ARCH=arm64
-        export SUBARCH=arm64
-        export CROSS_COMPILE=${{ env.CROSS_COMPILE }}
+          make O=out gta9_defconfig
+          cp $GITHUB_WORKSPACE/gta9_defconfig_patched.config .
+          bash scripts/kconfig/merge_config.sh -m out/.config gta9_defconfig_patched.config
+          cp out/.config arch/arm64/configs/gta9_defconfig
 
-        make gta9_defconfig
-        make -j$(nproc)
-        make modules -j$(nproc)
+      - name: ⚙️ Build Kernel + Modules
+        run: |
+          cd kernel-source
+          export ARCH=arm64
+          export SUBARCH=arm64
+          export CROSS_COMPILE=$TOOLCHAIN
 
-        mkdir -p ../out/modules_install
-        make INSTALL_MOD_PATH=../out/modules_install modules_install
+          make O=out gta9_defconfig
+          make -j$(nproc) O=out
 
-    - name: 📦 Pack modules.tar.gz
-      run: |
-        cd out/modules_install
-        tar -czf ../../modules.tar.gz lib
+          # Install modules into staging folder
+          make O=out INSTALL_MOD_PATH=$GITHUB_WORKSPACE/modules modules_install
 
-    - name: 📁 Clone AnyKernel3 & Setup
-      run: |
-        git clone --depth=1 https://github.com/osm0sis/AnyKernel3.git anykernel
-        cp kernel/arch/arm64/boot/Image.gz anykernel/
-        if [ -d kernel/arch/arm64/boot/dts ]; then
-          find kernel/arch/arm64/boot/dts -name "*.dtb" -exec cat {} + > anykernel/dtb
-          cat anykernel/Image.gz anykernel/dtb > anykernel/Image.gz-dtb
-        else
-          cp anykernel/Image.gz anykernel/Image.gz-dtb
-        fi
-        mkdir -p anykernel/lib/modules
-        tar -xzf modules.tar.gz -C anykernel/
-        sed -i 's/is_slot_device=0/is_slot_device=1/' anykernel/anykernel.sh
-        sed -i 's@kernel_string=.*@kernel_string="NetHunter Kernel for SM-X115"@' anykernel/anykernel.sh
-        sed -i 's/skip_initramfs=0/skip_initramfs=1/' anykernel/anykernel.sh
-        echo "Init.d support enabled"
+      - name: 📁 Prepare AnyKernel3 (with init.d and modules)
+        run: |
+          git clone https://github.com/osm0sis/AnyKernel3.git
+          cd AnyKernel3
 
-    - name: 📦 Create Magisk Flashable ZIP
-      run: |
-        cd anykernel
-        zip -r9 ../NetHunter-Kernel-SMX115.zip ./*
+          # Add kernel image
+          cp ../kernel-source/out/arch/arm64/boot/Image.gz-dtb zImage
 
-    - name: 📤 Upload ZIP to Artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: NetHunter-Kernel-SMX115
-        path: NetHunter-Kernel-SMX115.zip
+          # Add modules
+          if [ -d "$GITHUB_WORKSPACE/modules/lib/modules" ]; then
+            mkdir -p modules
+            find $GITHUB_WORKSPACE/modules/lib/modules/ -name '*.ko' -exec cp {} modules/ \;
+          fi
 
-    - name: 🚀 OPTIONAL:Push to GitHub Releases
-      if: ${{ false }}
-      uses: softprops/action-gh-release@v1
-      with:
-        tag_name: nethunter-smx115-latest
-        name: NetHunter Kernel SM-X115
-        files: NetHunter-Kernel-SMX115.zip
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Enable module and init.d support
+          sed -i 's/MODULES=false/MODULES=true/' anykernel.sh
+          sed -i 's/INITD=false/INITD=true/' anykernel.sh
+
+          # Add init.d test script
+          mkdir -p init.d
+          echo -e '#!/system/bin/sh\necho "NetHunter init.d test script ran at boot."' > init.d/99nethunter.sh
+          chmod +x init.d/99nethunter.sh
+
+      - name: 📦 Create Flashable Zip
+        run: |
+          cd AnyKernel3
+          zip -r9 NetHunter-Kernel-SMX115.zip * -x '*.git*' README.md *.md
+
+      - name: ☁️ Upload Flashable Kernel
+        uses: actions/upload-artifact@v3
+        with:
+          name: NetHunter-Kernel-SMX115
+          path: AnyKernel3/NetHunter-Kernel-SMX115.zip
