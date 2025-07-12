@@ -15,35 +15,34 @@ jobs:
         run: |
           git clone --depth=1 https://github.com/Anmol6002/kernel_source_sm-x115 kernel-source
 
-      - name: 🧹 Clean Kernel Source (make mrproper)
-        run: |
-         cd kernel-source
-         export ARCH=arm64
-         export SUBARCH=arm64
-         export CROSS_COMPILE=$TOOLCHAIN
-         make mrproper
-
-      - name: 🛠️ Install Dependencies
+      - name: 🛠️ Install Build Dependencies
         run: |
           sudo apt update
           sudo apt install -y build-essential bc bison flex libssl-dev \
             libncurses5-dev libncursesw5-dev git python3 rsync \
             cpio lzop ccache libelf-dev zip
 
-      - name: 🔧 Setup Toolchain
+      - name: 🔧 Setup Toolchain (GCC 4.9)
         run: |
-         git clone --depth=1 -b android10-release https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 toolchain64
-         echo "TOOLCHAIN=$GITHUB_WORKSPACE/toolchain64/bin/aarch64-linux-android-" >> $GITHUB_ENV
-         
+          git clone --depth=1 -b android10-release https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 toolchain64
+          echo "TOOLCHAIN=$GITHUB_WORKSPACE/toolchain64/bin/aarch64-linux-android-" >> $GITHUB_ENV
 
-      - name: 🧩 Merge Patched Config
+      - name: 🧹 Clean Kernel Tree
+        run: |
+          cd kernel-source
+          export ARCH=arm64
+          export SUBARCH=arm64
+          export CROSS_COMPILE=$TOOLCHAIN
+          make mrproper
+
+      - name: 🧩 Merge Patched Defconfig
         run: |
           cd kernel-source
           export ARCH=arm64
           export SUBARCH=arm64
           export CROSS_COMPILE=$TOOLCHAIN
 
-          make gta9_defconfig
+          make O=out gta9_defconfig
           cp $GITHUB_WORKSPACE/gta9_defconfig_patched.config .
           bash scripts/kconfig/merge_config.sh -m out/.config gta9_defconfig_patched.config
           cp out/.config arch/arm64/configs/gta9_defconfig
@@ -55,18 +54,15 @@ jobs:
           export SUBARCH=arm64
           export CROSS_COMPILE=$TOOLCHAIN
 
-          make gta9_defconfig
-          make -j$(nproc) 
-
-          # Install modules into staging folder
-          make INSTALL_MOD_PATH=$GITHUB_WORKSPACE/modules modules_install
+          make O=out gta9_defconfig
+          make -j$(nproc) O=out
+          make O=out INSTALL_MOD_PATH=$GITHUB_WORKSPACE/modules modules_install
 
       - name: 📁 Prepare AnyKernel3 (with init.d and modules)
         run: |
           git clone https://github.com/osm0sis/AnyKernel3.git
           cd AnyKernel3
-
-          # Add kernel image
+          # Add kernel image from correct location
           cp ../kernel-source/out/arch/arm64/boot/Image.gz-dtb zImage
 
           # Add modules
@@ -84,7 +80,7 @@ jobs:
           echo -e '#!/system/bin/sh\necho "NetHunter init.d test script ran at boot."' > init.d/99nethunter.sh
           chmod +x init.d/99nethunter.sh
 
-      - name: 📦 Create Flashable Zip
+      - name: 📦 Create Flashable Kernel Zip
         run: |
           cd AnyKernel3
           zip -r9 NetHunter-Kernel-SMX115.zip * -x '*.git*' README.md *.md
