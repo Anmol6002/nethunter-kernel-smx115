@@ -8,12 +8,12 @@ jobs:
     runs-on: ubuntu-22.04
 
     steps:
-      - name: 📥 Checkout This Repo (patch config repo)
+      - name: 📥 Checkout This Repo (patched config repo)
         uses: actions/checkout@v3
 
-      - name: 📥 Clone Kernel Source
+      - name: 📥 Clone Kernel Source into kernel-source folder
         run: |
-          git clone --depth=1 https://github.com/Anmol6002/kernel_source_sm-x115.git 
+          git clone --depth=1 https://github.com/Anmol6002/kernel_source_sm-x115.git kernel-source
 
       - name: 🛠️ Install Dependencies
         run: |
