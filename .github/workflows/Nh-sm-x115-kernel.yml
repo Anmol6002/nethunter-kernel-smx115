@@ -27,6 +27,7 @@ jobs:
         git clone --depth=1 https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 \
           -b android10-release toolchain64
         echo "CROSS_COMPILE=$(pwd)/toolchain64/bin/aarch64-linux-android-" >> $GITHUB_ENV
+
     - name: 🩹 Patch defconfig with NetHunter configs
       working-directory: kernel
       run: |
@@ -34,27 +35,50 @@ jobs:
         echo -e "\n# --- NetHunter Config Patches ---" >> $DEFCONFIG
         curl -sSL https://raw.githubusercontent.com/Anmol6002/nethunter-kernel-smx115/main/gta9_defconfig_patched.config >> $DEFCONFIG
         echo -e "# --- End Patch ---\n" >> $DEFCONFIG
+
+    - name: 🎧 Inline Patch: Sound Driver Configs
+      working-directory: kernel
+      run: |
+        DEFCONFIG="arch/arm64/configs/gta9_defconfig"
+        echo -e "\n# --- Sound Driver Configs ---" >> $DEFCONFIG
+        cat <<EOF >> $DEFCONFIG
+CONFIG_SND=y
+CONFIG_SND_SOC=y
+CONFIG_SND_DYNAMIC_MINORS=y
+CONFIG_SND_PROC_FS=y
+CONFIG_SND_VERBOSE_PRINTK=y
+CONFIG_SND_VERBOSE_PROCFS=y
+CONFIG_SND_SOC_MTK_BTCVSD=y
+CONFIG_SND_SOC_MTK_AUDIO=y
+CONFIG_SND_SIMPLE_CARD=y
+CONFIG_SND_USB_AUDIO=y
+CONFIG_SND_SOC_DUMMY_CODEC=y
+CONFIG_SND_SOC_GENERIC_DMAENGINE_PCM=y
+EOF
+        echo "# --- End Sound Patch ---" >> $DEFCONFIG
+
     - name: 🛠️ Compile Kernel & Modules
       working-directory: kernel
       run: |
-       export ARCH=arm64
-       export SUBARCH=arm64
-       export CROSS_COMPILE=${{ env.CROSS_COMPILE }} 
-       export KMI_SYMBOL_LIST_STRICT_MODE=0
-       export LOCALVERSION=""
+        export ARCH=arm64
+        export SUBARCH=arm64
+        export CROSS_COMPILE=${{ env.CROSS_COMPILE }}
+        export KMI_SYMBOL_LIST_STRICT_MODE=0
+        export LOCALVERSION=""
 
-       make gta9_defconfig
-       ./scripts/config --file .config --disable KMI_SYMBOL_LIST_STRICT_MODE
-       ./scripts/config --file .config --undefine KMI_SYMBOL_LIST
-       ./scripts/config --file .config --undefine KMI_WHITELIST
-       make olddefconfig
+        make gta9_defconfig
 
-       make -j$(nproc)
-       make modules -j$(nproc)
+        # Disable ABI enforcement
+        ./scripts/config --file .config --undefine KMI_SYMBOL_LIST_STRICT_MODE
+        ./scripts/config --file .config --undefine KMI_SYMBOL_LIST
+        ./scripts/config --file .config --undefine KMI_WHITELIST
 
-       mkdir -p ../out/modules_install
-       make INSTALL_MOD_PATH=../out/modules_install modules_install
-    
+        make olddefconfig
+        make -j$(nproc)
+        make modules -j$(nproc)
+
+        mkdir -p ../out/modules_install
+        make INSTALL_MOD_PATH=../out/modules_install modules_install
 
     - name: 📦 Pack modules.tar.gz
       run: |
@@ -75,8 +99,6 @@ jobs:
         tar -xzf modules.tar.gz -C anykernel/
         sed -i 's/is_slot_device=0/is_slot_device=1/' anykernel/anykernel.sh
         sed -i 's@kernel_string=.*@kernel_string="NetHunter Kernel for SM-X115"@' anykernel/anykernel.sh
-
-        # ➕ Enable init.d support
         sed -i 's/skip_initramfs=0/skip_initramfs=1/' anykernel/anykernel.sh
         echo "Init.d support enabled"
 
@@ -92,7 +114,7 @@ jobs:
         path: NetHunter-Kernel-SMX115.zip
 
     - name: 🚀 OPTIONAL:Push to GitHub Releases
-      if: ${{ false }}  # ❗ Change to true to enable
+      if: ${{ false }}
       uses: softprops/action-gh-release@v1
       with:
         tag_name: nethunter-smx115-latest
