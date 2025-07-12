@@ -101,4 +101,4 @@ jobs:
         name: NetHunter Kernel SM-X115
         files: NetHunter-Kernel-SMX115.zip
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
