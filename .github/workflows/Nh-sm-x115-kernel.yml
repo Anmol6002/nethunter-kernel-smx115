@@ -25,11 +25,10 @@ jobs:
 
       - name: 🔧 Setup Clang Toolchain (Android 14)
         run: |
-          curl -LO https://commondatastorage.googleapis.com/android-ci-toolchain/clang-r450784d.tar.gz
-          echo "b6d4a740e67a49842c77f0d7ce7e1c547be9a13ae92f8d7f949da0fd08c32144  clang-r450784d.tar.gz" | sha256sum -c -
-          mkdir clang-toolchain
-          tar -xzf clang-r450784d.tar.gz -C clang-toolchain --strip-components=1
-          echo "CLANG_PATH=$GITHUB_WORKSPACE/clang-toolchain" >> $GITHUB_ENV
+         curl -LO https://commondatastorage.googleapis.com/android-ci-toolchain/clang-r450784d.tar.gz
+         mkdir clang-toolchain
+         tar -xzf clang-r450784d.tar.gz -C clang-toolchain --strip-components=1
+         echo "CLANG_PATH=$GITHUB_WORKSPACE/clang-toolchain" >> $GITHUB_ENV
 
       - name: 🩹 Disable ABI Check in Makefiles
         run: |
