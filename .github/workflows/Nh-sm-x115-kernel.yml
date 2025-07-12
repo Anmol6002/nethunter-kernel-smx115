@@ -43,7 +43,7 @@ jobs:
           export SUBARCH=arm64
           export CROSS_COMPILE=$TOOLCHAIN
 
-          make O=out gta9_defconfig
+          make gta9_defconfig
           cp $GITHUB_WORKSPACE/gta9_defconfig_patched.config .
           bash scripts/kconfig/merge_config.sh -m out/.config gta9_defconfig_patched.config
           cp out/.config arch/arm64/configs/gta9_defconfig
@@ -55,11 +55,11 @@ jobs:
           export SUBARCH=arm64
           export CROSS_COMPILE=$TOOLCHAIN
 
-          make O=out gta9_defconfig
-          make -j$(nproc) O=out
+          make gta9_defconfig
+          make -j$(nproc) 
 
           # Install modules into staging folder
-          make O=out INSTALL_MOD_PATH=$GITHUB_WORKSPACE/modules modules_install
+          make INSTALL_MOD_PATH=$GITHUB_WORKSPACE/modules modules_install
 
       - name: 📁 Prepare AnyKernel3 (with init.d and modules)
         run: |
