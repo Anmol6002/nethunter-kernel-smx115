@@ -8,12 +8,12 @@ jobs:
     runs-on: ubuntu-22.04
 
     steps:
-      - name: 📥 Checkout Patch Repo (this repo)
+      - name: 📥 Checkout This Repo (patch config repo)
         uses: actions/checkout@v3
 
       - name: 📥 Clone Kernel Source
         run: |
-          git clone --depth=1 https://github.com/Anmol6002/kernel_source_sm-x115 kernel-source
+          git clone --depth=1 https://github.com/Anmol6002/kernel_source_sm-x115.git .
 
       - name: 🛠️ Install Dependencies
         run: |
@@ -27,7 +27,7 @@ jobs:
           git clone --depth=1 -b android10-release https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 toolchain64
           echo "TOOLCHAIN=$GITHUB_WORKSPACE/toolchain64/bin/aarch64-linux-android-" >> $GITHUB_ENV
 
-      - name: 🧹 Clean Kernel Build Directory (mrproper)
+      - name: 🧹 Clean Kernel Tree (mrproper)
         run: |
           cd kernel-source
           export ARCH=arm64
@@ -60,21 +60,13 @@ jobs:
         run: |
           git clone https://github.com/osm0sis/AnyKernel3.git
           cd AnyKernel3
-
-          # Add kernel image
           cp ../kernel-source/out/arch/arm64/boot/Image.gz-dtb zImage
-
-          # Add modules
           if [ -d "$GITHUB_WORKSPACE/modules/lib/modules" ]; then
             mkdir -p modules
             find $GITHUB_WORKSPACE/modules/lib/modules/ -name '*.ko' -exec cp {} modules/ \;
           fi
-
-          # Enable module and init.d support
           sed -i 's/MODULES=false/MODULES=true/' anykernel.sh
           sed -i 's/INITD=false/INITD=true/' anykernel.sh
-
-          # Add init.d test script
           mkdir -p init.d
           echo -e '#!/system/bin/sh\necho "NetHunter init.d test script ran at boot."' > init.d/99nethunter.sh
           chmod +x init.d/99nethunter.sh
