@@ -24,8 +24,8 @@ jobs:
 
       - name: 🔧 Setup Toolchain
         run: |
-          git clone --depth=1 -b android10-release https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 toolchain64
-          echo "TOOLCHAIN=$GITHUB_WORKSPACE/toolchain/bin/aarch64-linux-android-" >> $GITHUB_ENV
+         git clone --depth=1 -b android10-release https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 toolchain
+         echo "TOOLCHAIN=$GITHUB_WORKSPACE/toolchain/bin/aarch64-linux-android-" >> $GITHUB_ENV
 
       - name: 🧩 Merge Patched Config
         run: |
