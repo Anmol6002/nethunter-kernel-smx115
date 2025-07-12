@@ -34,28 +34,26 @@ jobs:
         echo -e "\n# --- NetHunter Config Patches ---" >> $DEFCONFIG
         curl -sSL https://raw.githubusercontent.com/Anmol6002/nethunter-kernel-smx115/main/gta9_defconfig_patched.config >> $DEFCONFIG
         echo -e "# --- End Patch ---\n" >> $DEFCONFIG
-
-    - name: 🧬 Generate ABI Whitelist
-      working-directory: kernel
-      run: |
-        cd build/abi
-        ./bootstrap
-        cd ../../
-        build/abi/build_abi.sh --update
-
     - name: 🛠️ Compile Kernel & Modules
       working-directory: kernel
       run: |
-        export ARCH=arm64
-        export SUBARCH=arm64
-        export CROSS_COMPILE=${{ env.CROSS_COMPILE }}
+       export ARCH=arm64
+       export SUBARCH=arm64
+       export CROSS_COMPILE=${{ env.CROSS_COMPILE }} 
+       export KMI_SYMBOL_LIST_STRICT_MODE=0
+       export LOCALVERSION=""
 
-        make gta9_defconfig
-        make -j$(nproc)
-        make modules -j$(nproc)
+       make gta9_defconfig
+       ./scripts/config --file .config --disable KMI_SYMBOL_LIST_STRICT_MODE
+       ./scripts/config --file .config --undefine KMI_SYMBOL_LIST
+       ./scripts/config --file .config --undefine KMI_WHITELIST
+       make olddefconfig
 
-        mkdir -p ../out/modules_install
-        make INSTALL_MOD_PATH=../out/modules_install modules_install
+       make -j$(nproc)
+       make modules -j$(nproc)
+
+       mkdir -p ../out/modules_install
+       make INSTALL_MOD_PATH=../out/modules_install modules_install
     
 
     - name: 📦 Pack modules.tar.gz
