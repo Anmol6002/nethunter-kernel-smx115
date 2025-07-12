@@ -36,26 +36,11 @@ jobs:
         curl -sSL https://raw.githubusercontent.com/Anmol6002/nethunter-kernel-smx115/main/gta9_defconfig_patched.config >> $DEFCONFIG
         echo -e "# --- End Patch ---\n" >> $DEFCONFIG
 
-    - name: 🎧 Inline Patch Sound Driver Configs
+    - name: 🔧 Create Dummy ABI File to Fix Error
       working-directory: kernel
       run: |
-        DEFCONFIG="arch/arm64/configs/gta9_defconfig"
-        echo -e "\n# --- Sound Driver Configs ---" >> $DEFCONFIG
-        cat <<EOF >> $DEFCONFIG
-        CONFIG_SND=y
-        CONFIG_SND_SOC=y
-        CONFIG_SND_DYNAMIC_MINORS=y
-        CONFIG_SND_PROC_FS=y
-        CONFIG_SND_VERBOSE_PRINTK=y
-        CONFIG_SND_VERBOSE_PROCFS=y
-        CONFIG_SND_SOC_MTK_BTCVSD=y
-        CONFIG_SND_SOC_MTK_AUDIO=y
-        CONFIG_SND_SIMPLE_CARD=y
-        CONFIG_SND_USB_AUDIO=y
-        CONFIG_SND_SOC_DUMMY_CODEC=y
-        CONFIG_SND_SOC_GENERIC_DMAENGINE_PCM=y
-        EOF
-        echo "# --- End Sound Patch ---" >> $DEFCONFIG
+        mkdir -p out/target/product/gta9/obj/KERNEL_OBJ/kernel-5.10
+        touch out/target/product/gta9/obj/KERNEL_OBJ/kernel-5.10/abi_symbollist.raw
 
     - name: 🛠️ Compile Kernel & Modules
       working-directory: kernel
@@ -63,17 +48,8 @@ jobs:
         export ARCH=arm64
         export SUBARCH=arm64
         export CROSS_COMPILE=${{ env.CROSS_COMPILE }}
-        export KMI_SYMBOL_LIST_STRICT_MODE=0
-        export LOCALVERSION=""
 
         make gta9_defconfig
-
-        # Disable ABI enforcement
-        ./scripts/config --file .config --undefine KMI_SYMBOL_LIST_STRICT_MODE
-        ./scripts/config --file .config --undefine KMI_SYMBOL_LIST
-        ./scripts/config --file .config --undefine KMI_WHITELIST
-
-        make olddefconfig
         make -j$(nproc)
         make modules -j$(nproc)
 
