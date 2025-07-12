@@ -27,7 +27,7 @@ jobs:
         git clone --depth=1 https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 \
           -b android10-release toolchain64
         echo "CROSS_COMPILE=$(pwd)/toolchain64/bin/aarch64-linux-android-" >> $GITHUB_ENV
-- name: 🩹 Patch defconfig with NetHunter configs
+    - name: 🩹 Patch defconfig with NetHunter configs
       working-directory: kernel
       run: |
         DEFCONFIG="arch/arm64/configs/gta9_defconfig"
