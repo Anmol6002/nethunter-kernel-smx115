@@ -37,24 +37,26 @@ jobs:
 
       - name: 🧩 Merge Patched Config
         run: |
-          cd kernel-source
-          export ARCH=arm64
-          export SUBARCH=arm64
-          export CROSS_COMPILE=$TOOLCHAIN
-          make O=out gta9_defconfig
-          cp $GITHUB_WORKSPACE/gta9_defconfig_patched.config .
-          bash scripts/kconfig/merge_config.sh -m out/.config gta9_defconfig_patched.config
-          cp out/.config arch/arm64/configs/gta9_defconfig
-
+         cd kernel-source
+         export ARCH=arm64
+         export SUBARCH=arm64
+         export CROSS_COMPILE=$TOOLCHAIN
+         make gta9_defconfig
+         cp $GITHUB_WORKSPACE/gta9_defconfig_patched.config .
+         bash scripts/kconfig/merge_config.sh -m .config gta9_defconfig_patched.config
+         cp .config arch/arm64/configs/gta9_defconfig
+         make mrproper
+    
       - name: ⚙️ Build Kernel + Modules
         run: |
-          cd kernel-source
-          export ARCH=arm64
-          export SUBARCH=arm64
-          export CROSS_COMPILE=$TOOLCHAIN
-          make O=out gta9_defconfig
-          make -j$(nproc) O=out
-          make O=out INSTALL_MOD_PATH=$GITHUB_WORKSPACE/modules modules_install
+         cd kernel-source
+         export ARCH=arm64
+         export SUBARCH=arm64
+         export CROSS_COMPILE=$TOOLCHAIN
+         make mrproper
+         make O=out gta9_defconfig
+         make -j$(nproc) O=out
+         make O=out INSTALL_MOD_PATH=$GITHUB_WORKSPACE/modules modules_install
 
       - name: 📁 Prepare AnyKernel3 (with init.d and modules)
         run: |
