@@ -33,7 +33,7 @@ jobs:
           export ARCH=arm64
           export SUBARCH=arm64
           export CROSS_COMPILE=$TOOLCHAIN
-          make mrproper
+          make 0=out mrproper
 
       - name: 🧩 Merge Patched Defconfig
         run: |
