@@ -15,33 +15,32 @@ jobs:
         run: |
           git clone --depth=1 https://github.com/Anmol6002/kernel_source_sm-x115 kernel-source
 
-      - name: 🛠️ Install Build Dependencies
+      - name: 🛠️ Install Dependencies
         run: |
           sudo apt update
           sudo apt install -y build-essential bc bison flex libssl-dev \
             libncurses5-dev libncursesw5-dev git python3 rsync \
             cpio lzop ccache libelf-dev zip
 
-      - name: 🔧 Setup Toolchain (GCC 4.9)
+      - name: 🔧 Setup Toolchain
         run: |
           git clone --depth=1 -b android10-release https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 toolchain64
           echo "TOOLCHAIN=$GITHUB_WORKSPACE/toolchain64/bin/aarch64-linux-android-" >> $GITHUB_ENV
 
-      - name: 🧹 Clean Kernel Tree
+      - name: 🧹 Clean Kernel Build Directory (mrproper)
         run: |
           cd kernel-source
           export ARCH=arm64
           export SUBARCH=arm64
           export CROSS_COMPILE=$TOOLCHAIN
-          make 0=out mrproper
+          make O=out mrproper
 
-      - name: 🧩 Merge Patched Defconfig
+      - name: 🧩 Merge Patched Config
         run: |
           cd kernel-source
           export ARCH=arm64
           export SUBARCH=arm64
           export CROSS_COMPILE=$TOOLCHAIN
-
           make O=out gta9_defconfig
           cp $GITHUB_WORKSPACE/gta9_defconfig_patched.config .
           bash scripts/kconfig/merge_config.sh -m out/.config gta9_defconfig_patched.config
@@ -53,7 +52,6 @@ jobs:
           export ARCH=arm64
           export SUBARCH=arm64
           export CROSS_COMPILE=$TOOLCHAIN
-
           make O=out gta9_defconfig
           make -j$(nproc) O=out
           make O=out INSTALL_MOD_PATH=$GITHUB_WORKSPACE/modules modules_install
@@ -62,7 +60,8 @@ jobs:
         run: |
           git clone https://github.com/osm0sis/AnyKernel3.git
           cd AnyKernel3
-          # Add kernel image from correct location
+
+          # Add kernel image
           cp ../kernel-source/out/arch/arm64/boot/Image.gz-dtb zImage
 
           # Add modules
@@ -80,7 +79,7 @@ jobs:
           echo -e '#!/system/bin/sh\necho "NetHunter init.d test script ran at boot."' > init.d/99nethunter.sh
           chmod +x init.d/99nethunter.sh
 
-      - name: 📦 Create Flashable Kernel Zip
+      - name: 📦 Create Flashable Zip
         run: |
           cd AnyKernel3
           zip -r9 NetHunter-Kernel-SMX115.zip * -x '*.git*' README.md *.md
