@@ -15,11 +15,6 @@ jobs:
         run: |
           git clone --depth=1 https://github.com/Anmol6002/kernel_source_sm-x115 kernel-source
 
-      - name: 🧹 Clean Kernel Source (make mrproper)
-        run: |
-          cd kernel-source
-          make mrproper
-          
       - name: 🛠️ Install Dependencies
         run: |
           sudo apt update
@@ -29,8 +24,16 @@ jobs:
 
       - name: 🔧 Setup Toolchain
         run: |
-         git clone --depth=1 -b android10-release https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 toolchain
-         echo "TOOLCHAIN=$GITHUB_WORKSPACE/toolchain/bin/aarch64-linux-android-" >> $GITHUB_ENV
+          git clone --depth=1 -b android10-release https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 toolchain
+          echo "TOOLCHAIN=$GITHUB_WORKSPACE/toolchain/bin/aarch64-linux-android-" >> $GITHUB_ENV
+
+      - name: 🧹 Clean Kernel Source (make mrproper)
+        run: |
+          cd kernel-source
+          export ARCH=arm64
+          export SUBARCH=arm64
+          export CROSS_COMPILE=$TOOLCHAIN
+          make mrproper
 
       - name: 🧩 Merge Patched Config
         run: |
