@@ -15,6 +15,10 @@ jobs:
         run: |
           git clone --depth=1 https://github.com/Anmol6002/kernel_source_sm-x115.git kernel-source
 
+      - name: 🩹 Patch Kernel Makefile to Skip ABI Check
+        run: |
+          sed -i '/abi_symbollist.raw/ s/^/#/' kernel-source/Makefile
+     
       - name: 🛠️ Install Dependencies
         run: |
           sudo apt update
