@@ -15,6 +15,11 @@ jobs:
         run: |
           git clone --depth=1 https://github.com/Anmol6002/kernel_source_sm-x115 kernel-source
 
+      - name: 🧹 Clean Kernel Source (make mrproper)
+        run: |
+          cd kernel-source
+          make mrproper
+          
       - name: 🛠️ Install Dependencies
         run: |
           sudo apt update
