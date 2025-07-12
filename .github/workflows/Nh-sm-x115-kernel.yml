@@ -81,7 +81,7 @@ jobs:
           zip -r9 NetHunter-Kernel-SMX115.zip * -x '*.git*' README.md *.md
 
       - name: ☁️ Upload Flashable Kernel
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: NetHunter-Kernel-SMX115
           path: AnyKernel3/NetHunter-Kernel-SMX115.zip
