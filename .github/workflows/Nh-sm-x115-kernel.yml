@@ -13,7 +13,7 @@ jobs:
 
       - name: 📥 Clone Kernel Source
         run: |
-          git clone --depth=1 https://github.com/Anmol6002/kernel_source_sm-x115.git .
+          git clone --depth=1 https://github.com/Anmol6002/kernel_source_sm-x115.git 
 
       - name: 🛠️ Install Dependencies
         run: |
