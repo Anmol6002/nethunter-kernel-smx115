@@ -36,25 +36,25 @@ jobs:
         curl -sSL https://raw.githubusercontent.com/Anmol6002/nethunter-kernel-smx115/main/gta9_defconfig_patched.config >> $DEFCONFIG
         echo -e "# --- End Patch ---\n" >> $DEFCONFIG
 
-    - name: 🎧 Inline Patch: Sound Driver Configs
+    - name: 🎧 Inline Patch Sound Driver Configs
       working-directory: kernel
       run: |
         DEFCONFIG="arch/arm64/configs/gta9_defconfig"
         echo -e "\n# --- Sound Driver Configs ---" >> $DEFCONFIG
         cat <<EOF >> $DEFCONFIG
-CONFIG_SND=y
-CONFIG_SND_SOC=y
-CONFIG_SND_DYNAMIC_MINORS=y
-CONFIG_SND_PROC_FS=y
-CONFIG_SND_VERBOSE_PRINTK=y
-CONFIG_SND_VERBOSE_PROCFS=y
-CONFIG_SND_SOC_MTK_BTCVSD=y
-CONFIG_SND_SOC_MTK_AUDIO=y
-CONFIG_SND_SIMPLE_CARD=y
-CONFIG_SND_USB_AUDIO=y
-CONFIG_SND_SOC_DUMMY_CODEC=y
-CONFIG_SND_SOC_GENERIC_DMAENGINE_PCM=y
-EOF
+        CONFIG_SND=y
+        CONFIG_SND_SOC=y
+        CONFIG_SND_DYNAMIC_MINORS=y
+        CONFIG_SND_PROC_FS=y
+        CONFIG_SND_VERBOSE_PRINTK=y
+        CONFIG_SND_VERBOSE_PROCFS=y
+        CONFIG_SND_SOC_MTK_BTCVSD=y
+        CONFIG_SND_SOC_MTK_AUDIO=y
+        CONFIG_SND_SIMPLE_CARD=y
+        CONFIG_SND_USB_AUDIO=y
+        CONFIG_SND_SOC_DUMMY_CODEC=y
+        CONFIG_SND_SOC_GENERIC_DMAENGINE_PCM=y
+        EOF
         echo "# --- End Sound Patch ---" >> $DEFCONFIG
 
     - name: 🛠️ Compile Kernel & Modules
