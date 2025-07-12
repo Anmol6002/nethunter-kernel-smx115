@@ -25,9 +25,9 @@ jobs:
 
       - name: 🔧 Setup Clang Toolchain (Android 14)
         run: |
-         curl -LO https://commondatastorage.googleapis.com/android-ci-toolchain/clang-r450784d.tar.gz
          mkdir clang-toolchain
-         tar -xzf clang-r450784d.tar.gz -C clang-toolchain --strip-components=1
+         git clone --depth=1 https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86 clang-prebuilt
+         cp -r clang-prebuilt/clang-r450784d/* clang-toolchain/
          echo "CLANG_PATH=$GITHUB_WORKSPACE/clang-toolchain" >> $GITHUB_ENV
 
       - name: 🩹 Disable ABI Check in Makefiles
