@@ -89,6 +89,12 @@ jobs:
           echo "CLANG_PATH=$GITHUB_WORKSPACE/clang-toolchain/clang-r487747c" >> $GITHUB_ENV
           echo "CLANG_TRIPLE=aarch64-linux-gnu-" >> $GITHUB_ENV
 
+      - name: 🔧 Install GCC Cross-Compiler for Android Kernel 5.15+
+        run: |
+          sudo apt update
+          sudo apt install -y gcc-aarch64-linux-gnu
+          echo "CROSS_COMPILE=aarch64-linux-gnu-" >> $GITHUB_ENV
+
       - name: 🩹 Disable ABI Check in Makefiles
         run: |
           grep -rl 'abi_symbollist.raw' kernel-source | while read file; do
@@ -117,18 +123,33 @@ jobs:
       - name: ⚙️ Build Kernel + Modules with Clang
         run: |
           cd kernel-source
+          
           export ARCH=arm64
           export SUBARCH=arm64
+          export CLANG_TRIPLE=aarch64-linux-gnu-
           export CC=$CLANG_PATH/bin/clang
-          export CROSS_COMPILE=$CLANG_PATH/bin/aarch64-linux-android-
-          export CLANG_TRIPLE=$CLANG_TRIPLE
+          export CROSS_COMPILE=aarch64-linux-gnu-
+          
+          # Optional: Show toolchain versions
+          $CC --version
+          aarch64-linux-gnu-gcc --version
+          
           make O=out gta9_defconfig
+
           make -j$(nproc) O=out \
             CC=$CC \
             CROSS_COMPILE=$CROSS_COMPILE \
-            CLANG_TRIPLE=$CLANG_TRIPLE
+            CLANG_TRIPLE=$CLANG_TRIPLE \
+            LD=aarch64-linux-gnu-ld.lld \
+            AR=aarch64-linux-gnu-ar \
+            NM=aarch64-linux-gnu-nm \
+            OBJCOPY=aarch64-linux-gnu-objcopy \
+            OBJDUMP=aarch64-linux-gnu-objdump \
+            STRIP=aarch64-linux-gnu-strip
+
           echo "✔️ Kernel compiled successfully!"
           file out/arch/arm64/boot/Image.gz-dtb
+
           make O=out INSTALL_MOD_PATH=$GITHUB_WORKSPACE/modules modules_install
 
       - name: 📁 Prepare AnyKernel3 (with modules + init.d)
