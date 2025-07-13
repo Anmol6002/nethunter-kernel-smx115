@@ -137,6 +137,7 @@ jobs:
          aarch64-linux-gnu-gcc --version || echo "❌ GCC not found!"
 
          echo "📄 Running defconfig..."
+         mkdir -p out
          make O=out gta9_defconfig > out/build.log 2>&1
 
          echo "🔨 Starting kernel build (will continue on error)..."
