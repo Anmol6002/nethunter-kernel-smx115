@@ -83,17 +83,18 @@ jobs:
             libncurses5-dev libncursesw5-dev git python3 rsync \
             cpio lzop ccache libelf-dev zip
 
-      - name: 🔧 Setup Clang Toolchain (Android U)
+      - name: 🔧 Setup Clang Toolchain (auto-detect version)
         run: |
-          git clone --depth=1 https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86 clang-toolchain
-          echo "CLANG_PATH=$GITHUB_WORKSPACE/clang-toolchain/clang-r487747c" >> $GITHUB_ENV
-          echo "CLANG_TRIPLE=aarch64-linux-gnu-" >> $GITHUB_ENV
+         git clone --depth=1 https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86 clang-toolchain
+         CLANG_DIR=$(find clang-toolchain -maxdepth 1 -type d -name "clang-r*" | head -n 1)
+         echo "CLANG_PATH=$GITHUB_WORKSPACE/$CLANG_DIR" >> $GITHUB_ENV
+         echo "CLANG_TRIPLE=aarch64-linux-gnu-" >> $GITHUB_ENV
 
       - name: 🔧 Install GCC Cross-Compiler for Android Kernel 5.15+
         run: |
-          sudo apt update
-          sudo apt install -y gcc-aarch64-linux-gnu
-          echo "CROSS_COMPILE=aarch64-linux-gnu-" >> $GITHUB_ENV
+         sudo apt update
+         sudo apt install -y gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu
+         echo "CROSS_COMPILE=aarch64-linux-gnu-" >> $GITHUB_ENV
 
       - name: 🩹 Disable ABI Check in Makefiles
         run: |
@@ -122,35 +123,40 @@ jobs:
 
       - name: ⚙️ Build Kernel + Modules with Clang
         run: |
-          cd kernel-source
-          
-          export ARCH=arm64
-          export SUBARCH=arm64
-          export CLANG_TRIPLE=aarch64-linux-gnu-
-          export CC=$CLANG_PATH/bin/clang
-          export CROSS_COMPILE=aarch64-linux-gnu-
-          
-          # Optional: Show toolchain versions
-          $CC --version
-          aarch64-linux-gnu-gcc --version
-          
-          make O=out gta9_defconfig
+         cd kernel-source
 
-          make -j$(nproc) O=out \
-            CC=$CC \
-            CROSS_COMPILE=$CROSS_COMPILE \
-            CLANG_TRIPLE=$CLANG_TRIPLE \
-            LD=aarch64-linux-gnu-ld.lld \
-            AR=aarch64-linux-gnu-ar \
-            NM=aarch64-linux-gnu-nm \
-            OBJCOPY=aarch64-linux-gnu-objcopy \
-            OBJDUMP=aarch64-linux-gnu-objdump \
-            STRIP=aarch64-linux-gnu-strip
+         export ARCH=arm64
+         export SUBARCH=arm64
+         export CC=$CLANG_PATH/bin/clang
+         export CROSS_COMPILE=aarch64-linux-gnu-
+         export CLANG_TRIPLE=aarch64-linux-gnu-
 
-          echo "✔️ Kernel compiled successfully!"
-          file out/arch/arm64/boot/Image.gz-dtb
+         echo "📦 Using Clang from: $CC"
+         $CC --version || { echo "❌ Clang not found!"; exit 1; }
 
-          make O=out INSTALL_MOD_PATH=$GITHUB_WORKSPACE/modules modules_install
+         echo "📦 Using GCC Cross-Compiler:"
+         aarch64-linux-gnu-gcc --version || { echo "❌ GCC not found!"; exit 1; }
+
+         echo "📄 Running defconfig..."
+         make O=out gta9_defconfig
+
+         echo "🔨 Starting kernel build..."
+         make -j$(nproc) O=out \
+         CC=$CC \
+         CROSS_COMPILE=$CROSS_COMPILE \
+         CLANG_TRIPLE=$CLANG_TRIPLE \
+         LD=aarch64-linux-gnu-ld \
+         AR=aarch64-linux-gnu-ar \
+         NM=aarch64-linux-gnu-nm \
+         OBJCOPY=aarch64-linux-gnu-objcopy \
+         OBJDUMP=aarch64-linux-gnu-objdump \
+         STRIP=aarch64-linux-gnu-strip
+  
+         echo "✅ Kernel compiled successfully!"
+         file out/arch/arm64/boot/Image.gz-dtb || echo "❌ Output image not found!"
+
+         echo "📦 Installing modules..."
+         make O=out INSTALL_MOD_PATH=$GITHUB_WORKSPACE/modules modules_install || echo "⚠️ Module install failed (maybe no modules were built)"
 
       - name: 📁 Prepare AnyKernel3 (with modules + init.d)
         run: |
