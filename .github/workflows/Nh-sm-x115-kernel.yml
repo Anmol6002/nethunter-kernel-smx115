@@ -151,7 +151,7 @@ jobs:
          OBJCOPY=aarch64-linux-gnu-objcopy \
          OBJDUMP=aarch64-linux-gnu-objdump \
          STRIP=aarch64-linux-gnu-strip \
-         >> out/build.log 2>&1 || true
+         2>&1 | tee -a out/build.log || true
 
          echo "📦 Attempting modules_install..."
          make O=out INSTALL_MOD_PATH=$GITHUB_WORKSPACE/modules modules_install >> out/build.log 2>&1 || true
