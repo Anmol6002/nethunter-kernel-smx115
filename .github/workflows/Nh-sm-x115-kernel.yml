@@ -16,19 +16,67 @@ jobs:
           mkdir kernel-source
           git clone --depth=1 https://github.com/Anmol6002/kernel_source_sm-x115.git kernel-source
 
+      - name: 🧩 Add CAN support submodules and patch kernel tree
+        run: |
+          cd kernel-source
+
+          # Ensure directory exists
+          mkdir -p drivers/net/can
+          mkdir -p include/uapi/linux/can
+
+          # Add submodules
+          git submodule add https://github.com/V0lk3n/usb-can-2-module drivers/net/can/usb-can-2-module || true
+          git submodule add https://github.com/V0lk3n/can-isotp drivers/net/can/can-isotp || true
+          git submodule add https://github.com/V0lk3n/elmcan drivers/net/can/elmcan || true
+          git submodule update --init --recursive
+
+          # Patch Kconfig
+          echo 'source "drivers/net/can/usb-can-2-module/Kconfig"' >> drivers/net/can/Kconfig
+          echo 'source "drivers/net/can/can-isotp/Kconfig"' >> drivers/net/can/Kconfig
+          echo '' >> drivers/net/can/Kconfig
+          cat <<EOF >> drivers/net/can/Kconfig
+config CAN_CAN327
+	tristate "Serial / USB serial ELM327 based OBD-II Interfaces (can327)"
+	depends on TTY
+	select CAN_RX_OFFLOAD
+	help
+	  CAN driver for several 'low cost' OBD-II interfaces based on the
+	  ELM327 OBD-II interpreter chip.
+
+	  This is a best effort driver - the ELM327 interface was never
+	  designed to be used as a standalone CAN interface. However, it can
+	  still be used for simple request-response protocols (such as OBD II),
+	  and to monitor broadcast messages on a bus (such as in a vehicle).
+
+	  Please refer to the documentation for information on how to use it:
+	  Documentation/networking/device_drivers/can/can327.rst
+EOF
+
+          # Patch Makefile
+          echo 'obj-y += usb-can-2-module/' >> drivers/net/can/Makefile
+          echo 'obj-y += can-isotp/' >> drivers/net/can/Makefile
+          echo 'obj-$(CONFIG_CAN_CAN327) += can327.o' >> drivers/net/can/Makefile
+
+          # Copy can327.c from elmcan
+          cp drivers/net/can/elmcan/can327.c drivers/net/can/
+
+          # Download isotp.h
+          curl -Lo include/uapi/linux/can/isotp.h https://raw.githubusercontent.com/V0lk3n/can-isotp/master/include/uapi/linux/can/isotp.h
+
       - name: 🛠️ Install Dependencies
         run: |
           sudo apt update
           sudo apt install -y build-essential bc bison flex libssl-dev \
             libncurses5-dev libncursesw5-dev git python3 rsync \
-            cpio lzop ccache libelf-dev zip curl
+            cpio lzop ccache libelf-dev zip
 
-      - name: 🔧 Setup Clang Toolchain (Android 14)
+      - name: 🔧 Setup Clang Toolchain (Fast prebuilt)
         run: |
-         mkdir clang-toolchain
-         git clone --depth=1 https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86 clang-prebuilt
-         cp -r clang-prebuilt/clang-r450784d/* clang-toolchain/
-         echo "CLANG_PATH=$GITHUB_WORKSPACE/clang-toolchain" >> $GITHUB_ENV
+          mkdir clang-toolchain
+          curl -L -o clang.tar.gz https://github.com/HuskyDG/clang-prebuilt-arm64/releases/download/20230106/clang-r450784d.tar.gz
+          tar -xzf clang.tar.gz -C clang-toolchain --strip-components=1
+          echo "CLANG_PATH=$GITHUB_WORKSPACE/clang-toolchain" >> $GITHUB_ENV
+          echo "CLANG_TRIPLE=aarch64-linux-gnu-" >> $GITHUB_ENV
 
       - name: 🩹 Disable ABI Check in Makefiles
         run: |
@@ -60,10 +108,9 @@ jobs:
           cd kernel-source
           export ARCH=arm64
           export SUBARCH=arm64
-          export CLANG_PATH=$CLANG_PATH
           export CC=$CLANG_PATH/bin/clang
           export CROSS_COMPILE=$CLANG_PATH/bin/aarch64-linux-android-
-          export CLANG_TRIPLE=aarch64-linux-gnu-
+          export CLANG_TRIPLE=$CLANG_TRIPLE
           make O=out gta9_defconfig
           make -j$(nproc) O=out \
             CC=$CC \
