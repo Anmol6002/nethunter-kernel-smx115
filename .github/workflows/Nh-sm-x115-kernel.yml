@@ -69,10 +69,10 @@ jobs:
             libncurses5-dev libncursesw5-dev git python3 rsync \
             cpio lzop ccache libelf-dev zip
 
-      - name: 🔧 Setup Clang Toolchain (Android T)
+      - name: 🔧 Setup Clang Toolchain (Android U)
         run: |
          git clone --depth=1 https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86 clang-toolchain
-         echo "CLANG_PATH=$GITHUB_WORKSPACE/clang-toolchain/clang-r450784d" >> $GITHUB_ENV
+         echo "CLANG_PATH=$GITHUB_WORKSPACE/clang-toolchain/clang-r487747c" >> $GITHUB_ENV
          echo "CLANG_TRIPLE=aarch64-linux-gnu-" >> $GITHUB_ENV
 
       - name: 🩹 Disable ABI Check in Makefiles
