@@ -121,6 +121,11 @@ jobs:
           cp .config arch/arm64/configs/gta9_defconfig
           make mrproper
 
+      - name: 🧹 Fix Kconfig newline warning
+        run: |
+          cd kernel-source
+          echo >> drivers/gpu/drm/mediatek/Kconfig
+
       - name: ⚙️ Build Kernel + Modules with Clang (non-fatal build)
         run: |
          cd kernel-source
