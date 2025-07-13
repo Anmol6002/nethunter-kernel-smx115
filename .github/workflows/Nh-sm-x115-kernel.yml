@@ -53,6 +53,28 @@ jobs:
 
           cp drivers/net/can/elmcan/can327.c drivers/net/can/
           curl -Lo include/uapi/linux/can/isotp.h https://raw.githubusercontent.com/V0lk3n/can-isotp/master/include/uapi/linux/can/isotp.h
+
+      - name: 🧪 Verify CAN integration
+        run: |
+         echo "========== Kconfig (last 30 lines) =========="
+         tail -n 30 kernel-source/drivers/net/can/Kconfig || echo "❌ Kconfig not found!"
+
+         echo
+         echo "========== Makefile (last 10 lines) =========="
+         tail -n 10 kernel-source/drivers/net/can/Makefile || echo "❌ Makefile not found!"
+
+         echo
+         echo "========== can327.c exists? =========="
+         ls -lh kernel-source/drivers/net/can/can327.c || echo "❌ can327.c missing!"
+
+         echo
+         echo "========== isotp.h exists? =========="
+         ls -lh kernel-source/include/uapi/linux/can/isotp.h || echo "❌ isotp.h missing!"
+ 
+         echo
+         echo "========== Cloned CAN submodules =========="
+         ls -1 kernel-source/drivers/net/can/ || echo "❌ Submodules missing!"
+    
      
       - name: 🛠️ Install Dependencies
         run: |
