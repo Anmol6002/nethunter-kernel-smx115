@@ -51,9 +51,9 @@ jobs:
                 Please refer to the documentation for 
                 information on how to use it:Documentation/networking/
                 device_drivers/can/can327.rst
-
-          EOF
- 
+                
+                EOF
+                
             echo 'obj-y += usb-can-2-module/' >> drivers/net/can/Makefile
             echo 'obj-y += can-isotp/' >> drivers/net/can/Makefile
             echo 'obj-$(CONFIG_CAN_CAN327) += can327.o' >> drivers/net/can/Makefile
