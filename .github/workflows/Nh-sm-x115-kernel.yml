@@ -28,7 +28,7 @@ jobs:
            echo 'source "drivers/net/can/usb-can-2-module/Kconfig"' >> drivers/net/can/Kconfig
            echo 'source "drivers/net/can/can-isotp/Kconfig"' >> drivers/net/can/Kconfig
            echo '' >> drivers/net/can/Kconfig
-           cat << 'EOF' >> drivers/net/can/Kconfig
+           cat << EOF >> drivers/net/can/Kconfig
            config CAN_CAN327
             tristate "Serial / USB serial ELM327 based OBD-II Interfaces (can327)"
             depends on TTY
