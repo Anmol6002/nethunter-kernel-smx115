@@ -17,51 +17,43 @@ jobs:
           git clone --depth=1 https://github.com/Anmol6002/kernel_source_sm-x115.git kernel-source
 
       - name: 🧩 Add CAN support submodules and patch kernel tree
+        shell: bash
         run: |
           cd kernel-source
-          mkdir -p drivers/net/can
-          mkdir -p include/uapi/linux/can
+          mkdir -p drivers/net/can include/uapi/linux/can
 
-          # Add submodules
           git submodule add https://github.com/V0lk3n/usb-can-2-module drivers/net/can/usb-can-2-module || true
           git submodule add https://github.com/V0lk3n/can-isotp drivers/net/can/can-isotp || true
           git submodule add https://github.com/V0lk3n/elmcan drivers/net/can/elmcan || true
           git submodule update --init --recursive
 
-          # Patch Kconfig
           echo 'source "drivers/net/can/usb-can-2-module/Kconfig"' >> drivers/net/can/Kconfig
           echo 'source "drivers/net/can/can-isotp/Kconfig"' >> drivers/net/can/Kconfig
           echo '' >> drivers/net/can/Kconfig
 
-          cat <<EOF >> drivers/net/can/Kconfig
-config CAN_CAN327
-	tristate "Serial / USB serial ELM327 based OBD-II Interfaces (can327)"
-	depends on TTY
-	select CAN_RX_OFFLOAD
-	help
-	  CAN driver for several 'low cost' OBD-II interfaces based on the
-	  ELM327 OBD-II interpreter chip.
+          echo 'config CAN_CAN327' >> drivers/net/can/Kconfig
+          echo '	tristate "Serial / USB serial ELM327 based OBD-II Interfaces (can327)"' >> drivers/net/can/Kconfig
+          echo '	depends on TTY' >> drivers/net/can/Kconfig
+          echo '	select CAN_RX_OFFLOAD' >> drivers/net/can/Kconfig
+          echo '	help' >> drivers/net/can/Kconfig
+          echo '	  CAN driver for several '\''low cost'\'' OBD-II interfaces based on the' >> drivers/net/can/Kconfig
+          echo '	  ELM327 OBD-II interpreter chip.' >> drivers/net/can/Kconfig
+          echo '' >> drivers/net/can/Kconfig
+          echo '	  This is a best effort driver - the ELM327 interface was never' >> drivers/net/can/Kconfig
+          echo '	  designed to be used as a standalone CAN interface. However, it can' >> drivers/net/can/Kconfig
+          echo '	  still be used for simple request-response protocols (such as OBD II),' >> drivers/net/can/Kconfig
+          echo '	  and to monitor broadcast messages on a bus (such as in a vehicle).' >> drivers/net/can/Kconfig
+          echo '' >> drivers/net/can/Kconfig
+          echo '	  Please refer to the documentation for information on how to use it:' >> drivers/net/can/Kconfig
+          echo '	  Documentation/networking/device_drivers/can/can327.rst' >> drivers/net/can/Kconfig
 
-	  This is a best effort driver - the ELM327 interface was never
-	  designed to be used as a standalone CAN interface. However, it can
-	  still be used for simple request-response protocols (such as OBD II),
-	  and to monitor broadcast messages on a bus (such as in a vehicle).
-
-	  Please refer to the documentation for information on how to use it:
-	  Documentation/networking/device_drivers/can/can327.rst
-EOF
-
-          # Patch Makefile
           echo 'obj-y += usb-can-2-module/' >> drivers/net/can/Makefile
           echo 'obj-y += can-isotp/' >> drivers/net/can/Makefile
           echo 'obj-$(CONFIG_CAN_CAN327) += can327.o' >> drivers/net/can/Makefile
 
-          # Add can327.c
           cp drivers/net/can/elmcan/can327.c drivers/net/can/
-
-          # Download isotp.h
           curl -Lo include/uapi/linux/can/isotp.h https://raw.githubusercontent.com/V0lk3n/can-isotp/master/include/uapi/linux/can/isotp.h
-
+     
       - name: 🛠️ Install Dependencies
         run: |
           sudo apt update
