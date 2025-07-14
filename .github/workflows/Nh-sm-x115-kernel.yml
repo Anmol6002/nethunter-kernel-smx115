@@ -127,36 +127,17 @@ jobs:
           
       - name: 🛠️ Final Kernel Patches and Fixes
         run: |
-         echo "✅ Enabling missing MT6366 audio dependencies in defconfig"
-         DEFCONFIG="kernel-source/arch/arm64/configs/gta9_defconfig"
-         
-         sort -u "$DEFCONFIG" -o "$DEFCONFIG"
-        
-         for cfg in \
-         CONFIG_I2C=y \
-         CONFIG_SOUND=y \
-         CONFIG_SND=y \
-         CONFIG_SND_SOC=y \
-         CONFIG_SND_SOC_MT6358=y \
-         CONFIG_SND_SOC_MT6358_ACCDET=y \
-         CONFIG_SND_SOC_MT6358_DUMMY=y \
-         CONFIG_MFD_MT6366=y \
-         CONFIG_SND_SOC_MT6366=y ; do
-         grep -q "^$cfg" "$DEFCONFIG" || echo "$cfg" >> "$DEFCONFIG"
-         done
+          echo "✅ Using gta9_defconfig_nethunter with manual patches"
+          DEFCONFIG="kernel-source/arch/arm64/configs/gta9_defconfig_nethunter"
 
-         echo "✅ Fixing logic errors in devapc-mtk-multi-ao.c"
-         DEVAPC="kernel-source/drivers/soc/mediatek/devapc/devapc-mtk-multi-ao.c"
-         if [ -f "$DEVAPC" ]; then
-         sed -i 's/\([!=]\)= *\([0-9A-Za-z_]\)/\1= \2/g' "$DEVAPC"
-         sed -i 's/ \& / \&\& /g' "$DEVAPC"
-         fi
+          echo "🧹 Sorting and cleaning defconfig"
+          sort -u "$DEFCONFIG" -o "$DEFCONFIG"
 
-         echo "✅ Ensuring CAN macro is present"
-         CAN_HEADER="kernel-source/include/uapi/linux/can/isotp.h"
-         grep -q "CAN_ISOTP_CF_BROADCAST" "$CAN_HEADER" || echo '#define CAN_ISOTP_CF_BROADCAST 0x80' >> "$CAN_HEADER"
+          echo "⚙️ Ensuring CAN macro exists"
+          CAN_HEADER="kernel-source/include/uapi/linux/can/isotp.h"
+          grep -q "CAN_ISOTP_CF_BROADCAST" "$CAN_HEADER" || echo '#define CAN_ISOTP_CF_BROADCAST 0x80' >> "$CAN_HEADER"
 
-         echo "✅ Patching done!"
+          echo "✅ Final patching step complete!"
       
       - name: ⚙️ Build Kernel + Modules with Clang (non-fatal build)
         run: |
@@ -206,7 +187,7 @@ jobs:
          echo "📦 Verifying output image..."
          file out/arch/arm64/boot/Image.gz-dtb || echo "❌ Output image not found!"
       
-      # ... (everything before is the same as yours)
+      
 
       - name: 📦 Create Image.gz-dtb if missing
         run: |
