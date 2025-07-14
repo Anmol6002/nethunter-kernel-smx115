@@ -120,56 +120,44 @@ jobs:
           cp .config arch/arm64/configs/gta9_defconfig
           make mrproper
 
-      - name: 🛠️ Apply Kernel Fixes (CAN, MTK, Audio, Duplicates)
-        run: |
-          echo "✅ Fixing missing macro: CAN_ISOTP_CF_BROADCAST"
-          ISOTP_HEADER="kernel-source/include/uapi/linux/can/isotp.h"
-          if ! grep -q "CAN_ISOTP_CF_BROADCAST" "$ISOTP_HEADER"; then
-            echo '#define CAN_ISOTP_CF_BROADCAST 0x80' >> "$ISOTP_HEADER"
-            echo "✅ Added CAN_ISOTP_CF_BROADCAST to $ISOTP_HEADER"
-          else
-            echo "ℹ️ CAN_ISOTP_CF_BROADCAST already defined"
-          fi
-
-          echo "✅ Fixing invalid '&' and constant '&&' in devapc-mtk-multi-ao.c"
-          DEVAPC_FILE="kernel-source/drivers/soc/mediatek/devapc/devapc-mtk-multi-ao.c"
-          if [ -f "$DEVAPC_FILE" ]; then
-            sed -i 's/\([a-zA-Z0-9_()]\) & \([a-zA-Z0-9_()]\)/\1 \&\& \2/g' "$DEVAPC_FILE"
-            sed -i 's/&& 0/0 \&\& 0/g' "$DEVAPC_FILE"
-            echo "✅ Replaced invalid operators in $DEVAPC_FILE"
-          else
-            echo "❌ $DEVAPC_FILE not found!"
-          fi
-
-          echo "🧹 Cleaning duplicate CONFIG entries from defconfig"
-          DEFCONFIG="kernel-source/arch/arm64/configs/gta9_defconfig"
-          CONFIGS_TO_REMOVE=$(grep -o '^CONFIG_[A-Z0-9_]\+' "$DEFCONFIG" | sort | uniq -d)
-          for config in $CONFIGS_TO_REMOVE; do
-            sed -i "/^$config=/d" "$DEFCONFIG"
-          done
-          echo "✅ Removed duplicate config lines"
-
-          echo "🎧 Enabling I2C + Audio Codec support for MT6358/MT6366"
-          for cfg in \
-            CONFIG_I2C \
-            CONFIG_SND \
-            CONFIG_SND_SOC \
-            CONFIG_SND_SOC_MT6358 \
-            CONFIG_SND_SOC_MT6358_ACCDET \
-            CONFIG_SND_SOC_MT6358_DUMMY \
-            CONFIG_SND_SOC_MT6366; do
-            sed -i "/^$cfg=/d" "$DEFCONFIG"
-            echo "$cfg=y" >> "$DEFCONFIG"
-          done
-          echo "✅ Audio configs injected"
-
-          echo "🧼 Done patching kernel source tree before build"
-
       - name: 🧹 Fix Kconfig newline warning
         run: |
           cd kernel-source
           echo >> drivers/gpu/drm/mediatek/Kconfig
+          
+      - name: 🛠️ Final Kernel Patches and Fixes
+        run: |
+         echo "✅ Enabling missing MT6366 audio dependencies in defconfig"
+         DEFCONFIG="kernel-source/arch/arm64/configs/gta9_defconfig"
+         
+         sort -u "$DEFCONFIG" -o "$DEFCONFIG"
+        
+         for cfg in \
+         CONFIG_I2C=y \
+         CONFIG_SOUND=y \
+         CONFIG_SND=y \
+         CONFIG_SND_SOC=y \
+         CONFIG_SND_SOC_MT6358=y \
+         CONFIG_SND_SOC_MT6358_ACCDET=y \
+         CONFIG_SND_SOC_MT6358_DUMMY=y \
+         CONFIG_MFD_MT6366=y \
+         CONFIG_SND_SOC_MT6366=y ; do
+         grep -q "^$cfg" "$DEFCONFIG" || echo "$cfg" >> "$DEFCONFIG"
+         done
 
+         echo "✅ Fixing logic errors in devapc-mtk-multi-ao.c"
+         DEVAPC="kernel-source/drivers/soc/mediatek/devapc/devapc-mtk-multi-ao.c"
+         if [ -f "$DEVAPC" ]; then
+         sed -i 's/\([!=]\)= *\([0-9A-Za-z_]\)/\1= \2/g' "$DEVAPC"
+         sed -i 's/ \& / \&\& /g' "$DEVAPC"
+         fi
+
+         echo "✅ Ensuring CAN macro is present"
+         CAN_HEADER="kernel-source/include/uapi/linux/can/isotp.h"
+         grep -q "CAN_ISOTP_CF_BROADCAST" "$CAN_HEADER" || echo '#define CAN_ISOTP_CF_BROADCAST 0x80' >> "$CAN_HEADER"
+
+         echo "✅ Patching done!"
+      
       - name: ⚙️ Build Kernel + Modules with Clang (non-fatal build)
         run: |
          cd kernel-source
