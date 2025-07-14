@@ -1,0 +1,22 @@
+﻿2025-07-13T18:22:13.6509282Z ##[group]Run git clone https://github.com/osm0sis/AnyKernel3.git
+2025-07-13T18:22:13.6510274Z [36;1mgit clone https://github.com/osm0sis/AnyKernel3.git[0m
+2025-07-13T18:22:13.6510828Z [36;1mcd AnyKernel3[0m
+2025-07-13T18:22:13.6511326Z [36;1mcp ../kernel-source/out/arch/arm64/boot/Image.gz-dtb zImage[0m
+2025-07-13T18:22:13.6511998Z [36;1mif [ -d "$GITHUB_WORKSPACE/modules/lib/modules" ]; then[0m
+2025-07-13T18:22:13.6512866Z [36;1m  mkdir -p modules[0m
+2025-07-13T18:22:13.6513547Z [36;1m  find $GITHUB_WORKSPACE/modules/lib/modules/ -name '*.ko' -exec cp {} modules/ \;[0m
+2025-07-13T18:22:13.6514238Z [36;1mfi[0m
+2025-07-13T18:22:13.6514634Z [36;1msed -i 's/MODULES=false/MODULES=true/' anykernel.sh[0m
+2025-07-13T18:22:13.6515216Z [36;1msed -i 's/INITD=false/INITD=true/' anykernel.sh[0m
+2025-07-13T18:22:13.6515694Z [36;1mmkdir -p init.d[0m
+2025-07-13T18:22:13.6516377Z [36;1mecho -e '#!/system/bin/sh\necho "NetHunter init.d test script ran at boot."' > init.d/99nethunter.sh[0m
+2025-07-13T18:22:13.6517199Z [36;1mchmod +x init.d/99nethunter.sh[0m
+2025-07-13T18:22:13.6555980Z shell: /usr/bin/bash -e {0}
+2025-07-13T18:22:13.6556363Z env:
+2025-07-13T18:22:13.6557083Z   CLANG_PATH: /home/runner/work/nethunter-kernel-smx115/nethunter-kernel-smx115/clang-toolchain/clang-r547379
+2025-07-13T18:22:13.6557973Z   CLANG_TRIPLE: aarch64-linux-gnu-
+2025-07-13T18:22:13.6558392Z   CROSS_COMPILE: aarch64-linux-gnu-
+2025-07-13T18:22:13.6558797Z ##[endgroup]
+2025-07-13T18:22:13.6627987Z Cloning into 'AnyKernel3'...
+2025-07-13T18:22:14.7309123Z cp: cannot stat '../kernel-source/out/arch/arm64/boot/Image.gz-dtb': No such file or directory
+2025-07-13T18:22:14.7324265Z ##[error]Process completed with exit code 1.
