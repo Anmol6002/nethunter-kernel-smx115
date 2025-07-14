@@ -127,8 +127,8 @@ jobs:
           
       - name: 🛠️ Final Kernel Patches and Fixes
         run: |
-          echo "✅ Using gta9_defconfig_nethunter with manual patches"
-          DEFCONFIG="kernel-source/arch/arm64/configs/gta9_defconfig_nethunter"
+          echo "✅ Using gta9_defconfig with manual patches"
+          DEFCONFIG="kernel-source/arch/arm64/configs/gta9_defconfig"
 
           echo "🧹 Sorting and cleaning defconfig"
           sort -u "$DEFCONFIG" -o "$DEFCONFIG"
