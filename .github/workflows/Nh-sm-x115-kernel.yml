@@ -174,17 +174,45 @@ jobs:
          echo "📦 Verifying output image..."
          file out/arch/arm64/boot/Image.gz-dtb || echo "❌ Output image not found!"
       
+      # ... (everything before is the same as yours)
+
+      - name: 📦 Create Image.gz-dtb if missing
+        run: |
+          cd kernel-source
+          if [ ! -f out/arch/arm64/boot/Image.gz-dtb ]; then
+            echo "⚠️ Image.gz-dtb not found. Trying to generate..."
+            if [ -f out/arch/arm64/boot/Image ] && [ -f out/arch/arm64/boot/dtbo.img ]; then
+              echo "✅ Found Image and dtbo.img, creating Image.gz-dtb"
+              gzip -c out/arch/arm64/boot/Image > out/arch/arm64/boot/Image.gz
+              cat out/arch/arm64/boot/Image.gz out/arch/arm64/boot/dtbo.img > out/arch/arm64/boot/Image.gz-dtb
+            else
+              echo "❌ Required Image or dtbo.img not found. Kernel image creation failed."
+              exit 1
+            fi
+          fi
+
       - name: 📁 Prepare AnyKernel3 (with modules + init.d)
         run: |
           git clone https://github.com/osm0sis/AnyKernel3.git
           cd AnyKernel3
-          cp ../kernel-source/out/arch/arm64/boot/Image.gz-dtb zImage
+          
+          # ✅ Copy zImage
+          cp ../kernel-source/out/arch/arm64/boot/Image.gz-dtb zImage || { echo "❌ Image.gz-dtb missing!"; exit 1; }
+          
+          # ✅ Copy modules if available
           if [ -d "$GITHUB_WORKSPACE/modules/lib/modules" ]; then
+            echo "📦 Copying modules..."
             mkdir -p modules
             find $GITHUB_WORKSPACE/modules/lib/modules/ -name '*.ko' -exec cp {} modules/ \;
+          else
+            echo "⚠️ No modules directory found — skipping module copy."
           fi
+
+          # ✅ Enable modules and init.d in anykernel.sh
           sed -i 's/MODULES=false/MODULES=true/' anykernel.sh
           sed -i 's/INITD=false/INITD=true/' anykernel.sh
+
+          # ✅ Add test init.d script
           mkdir -p init.d
           echo -e '#!/system/bin/sh\necho "NetHunter init.d test script ran at boot."' > init.d/99nethunter.sh
           chmod +x init.d/99nethunter.sh
@@ -208,7 +236,7 @@ jobs:
         with:
           name: NetHunter-Kernel-SMX115
           path: AnyKernel3/NetHunter-Kernel-SMX115.zip
-          
+
       - name: 📤 Upload Full Build Log
         uses: actions/upload-artifact@v4
         with:
