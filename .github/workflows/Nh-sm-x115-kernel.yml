@@ -123,7 +123,7 @@ jobs:
          cp $GITHUB_WORKSPACE/gta9_defconfig_patched.config .
          bash scripts/kconfig/merge_config.sh -m .config gta9_defconfig_patched.config
          cp .config arch/arm64/configs/gta9_defconfig
-         make mkproper
+         make mrproper
   
       - name: 🧹 Fix Kconfig newline warning
         run: |
