@@ -74,8 +74,46 @@ jobs:
          echo
          echo "========== Cloned CAN submodules =========="
          ls -1 kernel-source/drivers/net/can/ || echo "❌ Submodules missing!"
-    
-     
+
+      
+
+# ✅ INSERT THIS NEW FIX BLOCK HERE:
+
+      - name: 🛠️ Apply Kernel Fixes (CAN & MTK)
+        run: |
+          echo "✅ Fixing missing macro: CAN_ISOTP_CF_BROADCAST"
+          ISOTP_HEADER="kernel-source/include/uapi/linux/can/isotp.h"
+          if ! grep -q "CAN_ISOTP_CF_BROADCAST" "$ISOTP_HEADER"; then
+            echo '#define CAN_ISOTP_CF_BROADCAST 0x80' >> "$ISOTP_HEADER"
+            echo "✅ Added CAN_ISOTP_CF_BROADCAST to $ISOTP_HEADER"
+          else
+            echo "ℹ️ CAN_ISOTP_CF_BROADCAST already defined"
+          fi
+
+          echo "✅ Fixing invalid '&' bitwise usage in devapc-mtk-multi-ao.c"
+          DEVAPC_FILE="kernel-source/drivers/soc/mediatek/devapc/devapc-mtk-multi-ao.c"
+          if [ -f "$DEVAPC_FILE" ]; then
+            sed -i 's/\([a-zA-Z0-9_]\) & \([a-zA-Z0-9_]\)/\1 \&\& \2/g' "$DEVAPC_FILE"
+            echo "✅ Fixed bitwise '&' in $DEVAPC_FILE"
+          else
+            echo "❌ $DEVAPC_FILE not found!"
+          fi
+
+          echo "✅ Cleaning duplicate CONFIG entries from defconfig"
+          DEFCONFIG="kernel-source/arch/arm64/configs/gta9_defconfig"
+          for sym in CONFIG_USB_GADGET_DEBUG_FILES CONFIG_TMPFS CONFIG_TMPFS_POSIX_ACL CONFIG_PROC_FS CONFIG_PROC_PID_CPUSET CONFIG_SYSFS CONFIG_SECURITYFS; do
+            sed -i "/^$sym=.*/d" "$DEFCONFIG"
+            echo "✅ Removed duplicate $sym"
+          done
+
+          echo "✅ Ensuring SND_SOC_MT6366 and dependencies are properly set"
+          for sym in CONFIG_SND_SOC_MT6366 CONFIG_MFD_MT6366 CONFIG_GPIOLIB CONFIG_REGMAP_I2C CONFIG_SND_SOC_COMPONENT; do
+            grep -q "^$sym=" "$DEFCONFIG" || echo "$sym=y" >> "$DEFCONFIG"
+            echo "✅ $sym=y"
+          done
+
+          echo "🧼 Done patching kernel source tree before build"
+
       - name: 🛠️ Install Dependencies
         run: |
           sudo apt update
