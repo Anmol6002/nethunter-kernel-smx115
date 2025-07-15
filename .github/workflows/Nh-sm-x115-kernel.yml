@@ -160,7 +160,13 @@ jobs:
         run: |
          cd kernel-source
          grep -rn 'strncpy' drivers/ include/ || echo "No strncpy found"
-
+         
+      - name: 🧼 Clean Tree and Recreate Output Dir
+        run: |
+         cd kernel-source
+         make mrproper
+         rm -rf out
+         mkdir -p out
 
       - name: ⚙️ Build Kernel + Modules with GCC
         run: |
@@ -169,7 +175,7 @@ jobs:
          export SUBARCH=arm64
          export CROSS_COMPILE=$CROSS_COMPILE
          echo "📄 Using merged gta9_defconfig"
-         mkdir -p out
+         
          cp arch/arm64/configs/gta9_defconfig out/.config
          make O=out olddefconfig
 
