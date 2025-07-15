@@ -190,9 +190,10 @@ jobs:
          [ -f out/.config ] && echo "✅ Kernel config (.config) found." || echo "❌ .config not found!"
          find $GITHUB_WORKSPACE/modules -name '*.ko' | grep -q . && echo "✅ Kernel modules (*.ko) found." || echo "⚠️ No kernel modules found."
   
-      - name: 📥 Download dtbo.img from GitHub
+      - name: 📥 Download dtbo.img from GitHub Release
         run: |
-          curl -L -o kernel-source/out/arch/arm64/boot/dtbo.img https://raw.githubusercontent.com/Anmol6002/nethunter-kernel-smx115/main/dtbo.img
+         curl -L -o kernel-source/out/arch/arm64/boot/dtbo.img \
+         https://github.com/Anmol6002/nethunter-kernel-smx115/releases/download/v1.0-dtbo/dtbo.img
 
       - name: 📦 Create Image.gz-dtb if missing
         run: |
