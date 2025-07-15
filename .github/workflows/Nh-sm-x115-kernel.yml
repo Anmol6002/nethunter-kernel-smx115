@@ -121,6 +121,13 @@ jobs:
          cp $GITHUB_WORKSPACE/gta9_defconfig_patched.config .
          bash scripts/kconfig/merge_config.sh -m .config gta9_defconfig_patched.config
          cp .config arch/arm64/configs/gta9_defconfig
+
+      - name: 🧼 Clean After Merging defconfig
+        run: |
+         cd kernel-source
+         export ARCH=arm64
+         export SUBARCH=arm64
+         make mrproper
   
       - name: 🧹 Fix Kconfig newline warning
         run: |
