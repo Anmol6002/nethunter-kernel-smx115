@@ -171,6 +171,7 @@ jobs:
          export SUBARCH=arm64
          export CC="$CLANG_PATH/bin/clang --target=aarch64-linux-android"
          export "LD=$CLANG_PATH/bin/ld.lld"
+         export PATH="$CLANG_PATH/bin:$PATH"
          export LLVM=1
          export LLVM_IAS=1
          export CROSS_COMPILE=$CROSS_COMPILE
