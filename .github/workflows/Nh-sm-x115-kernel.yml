@@ -82,18 +82,12 @@ jobs:
             libncurses5-dev libncursesw5-dev git python3 rsync \
             cpio lzop ccache libelf-dev zip
 
-      - name: 🔧 Setup Clang Toolchain (auto-detect version)
+      - name: 🔧 Setup Official GCC Toolchain (Android 10 release)
         run: |
-         git clone --depth=1 https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86 clang-toolchain
-         CLANG_DIR=$(find clang-toolchain -maxdepth 1 -type d -name "clang-r*" | head -n 1)
-         echo "CLANG_PATH=$GITHUB_WORKSPACE/$CLANG_DIR" >> $GITHUB_ENV
-         echo "CLANG_TRIPLE=aarch64-linux-gnu-" >> $GITHUB_ENV
+         git clone https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 -b android10-release toolchain64
+         echo "CROSS_COMPILE=$GITHUB_WORKSPACE/toolchain64/bin/aarch64-linux-android-" >> $GITHUB_ENV
 
-      - name: 🔧 Install GCC Cross-Compiler for Android Kernel 5.15+
-        run: |
-         sudo apt update
-         sudo apt install -y gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu
-         echo "CROSS_COMPILE=aarch64-linux-gnu-" >> $GITHUB_ENV
+      
 
       - name: 🩹 Disable ABI Check in Makefiles
         run: |
@@ -163,57 +157,40 @@ jobs:
         run: |
          cd kernel-source
          grep -rn 'strncpy' drivers/ include/ || echo "No strncpy found"
-      
-      - name: ⚙️ Build Kernel + Modules with Clang (non-fatal build)
+
+
+      - name: ⚙️ Build Kernel + Modules with GCC
         run: |
          cd kernel-source
          export ARCH=arm64
          export SUBARCH=arm64
-         export CC="$CLANG_PATH/bin/clang --target=aarch64-linux-android"
-         export LD="$CLANG_PATH/bin/ld.lld"
-         export PATH="$CLANG_PATH/bin:$PATH"
-         export LLVM=1
-         export LLVM_IAS=1
          export CROSS_COMPILE=$CROSS_COMPILE
-         export CLANG_TRIPLE=$CLANG_TRIPLE
          export KCFLAGS="-Wno-frame-larger-than="
          export KBUILD_CFLAGS="-Wno-frame-larger-than="
-         echo "📦 Using Clang from: $CC"
-         $CC --version || echo "❌ Clang not found!"
-         echo "📦 Using GCC Cross-Compiler:"
-         aarch64-linux-gnu-gcc --version || echo "❌ GCC not found!"
-         echo "📄 Copying merged defconfig..."
+
+         echo "📄 Using merged gta9_defconfig"
          mkdir -p out
          cp arch/arm64/configs/gta9_defconfig out/.config
          make O=out olddefconfig
-         echo "🔨 Starting kernel build (will continue on error)..."
+
+         echo "🔨 Starting kernel build..."
          make -j$(nproc) O=out \
-         CC="$CC" \
          CROSS_COMPILE=$CROSS_COMPILE \
-         CLANG_TRIPLE=$CLANG_TRIPLE \
-         LLVM=1 \
-         LLVM_IAS=1 \
          KCFLAGS="$KCFLAGS" \
          KBUILD_CFLAGS="$KBUILD_CFLAGS" \
-         LD="$LD" \
-         AR=aarch64-linux-gnu-ar \
-         NM=aarch64-linux-gnu-nm \
-         OBJCOPY=aarch64-linux-gnu-objcopy \
-         OBJDUMP=aarch64-linux-gnu-objdump \
-         STRIP=aarch64-linux-gnu-strip \
-         2>&1 | tee -a out/build.log || true
+         2>&1 | tee out/build.log || true
+
          echo "📦 Attempting modules_install..."
          make O=out INSTALL_MOD_PATH=$GITHUB_WORKSPACE/modules modules_install >> out/build.log 2>&1 || true
+
          echo "🧾 Kernel Build Summary (errors & warnings):"
          echo "========== ERRORS =========="
          grep -i "error:" out/build.log || echo "✅ No build errors found."
          echo "========== WARNINGS =========="
          grep -i "warning:" out/build.log || echo "✅ No build warnings found."
-         echo "========== UNMET DEPENDENCIES =========="
-         grep -i "unmet" out/build.log || echo "✅ No unmet dependencies found."
          echo "📦 Verifying output image..."
          file out/arch/arm64/boot/Image.gz-dtb || echo "❌ Output image not found!"
-   
+  
       - name: 📥 Download dtbo.img from GitHub
         run: |
           curl -L -o kernel-source/out/arch/arm64/boot/dtbo.img https://raw.githubusercontent.com/Anmol6002/nethunter-kernel-smx115/main/dtbo.img
