@@ -165,9 +165,6 @@ jobs:
          export ARCH=arm64
          export SUBARCH=arm64
          export CROSS_COMPILE=$CROSS_COMPILE
-         export KCFLAGS="-Wno-frame-larger-than="
-         export KBUILD_CFLAGS="-Wno-frame-larger-than="
-
          echo "📄 Using merged gta9_defconfig"
          mkdir -p out
          cp arch/arm64/configs/gta9_defconfig out/.config
@@ -176,8 +173,6 @@ jobs:
          echo "🔨 Starting kernel build..."
          make -j$(nproc) O=out \
          CROSS_COMPILE=$CROSS_COMPILE \
-         KCFLAGS="$KCFLAGS" \
-         KBUILD_CFLAGS="$KBUILD_CFLAGS" \
          2>&1 | tee out/build.log || true
 
          echo "📦 Attempting modules_install..."
