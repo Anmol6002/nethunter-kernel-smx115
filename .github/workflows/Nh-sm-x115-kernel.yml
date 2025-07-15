@@ -140,6 +140,11 @@ jobs:
           grep -q "CAN_ISOTP_CF_BROADCAST" "$CAN_HEADER" || echo '#define CAN_ISOTP_CF_BROADCAST 0x80' >> "$CAN_HEADER"
 
           echo "✅ Final patching step complete!"
+
+      - name: 🔍 Locate risky strncpy usage
+        run: |
+         cd kernel-source
+         grep -rn 'strncpy' drivers/ include/ || echo "No strncpy found"
       
       - name: ⚙️ Build Kernel + Modules with Clang (non-fatal build)
         run: |
