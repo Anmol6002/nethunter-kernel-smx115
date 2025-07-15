@@ -186,9 +186,11 @@ jobs:
          make O=out olddefconfig
          echo "🔨 Starting kernel build (will continue on error)..."
          make -j$(nproc) O=out \
-         CC=$CC \
+         CC="$CC" \
          CROSS_COMPILE=$CROSS_COMPILE \
          CLANG_TRIPLE=$CLANG_TRIPLE \
+         LLVM=1 \
+         LLVM_IAS=1 \
          KCFLAGS="$KCFLAGS" \
          KBUILD_CFLAGS="$KBUILD_CFLAGS" \
          LD=aarch64-linux-gnu-ld \
