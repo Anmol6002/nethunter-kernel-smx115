@@ -82,10 +82,10 @@ jobs:
             libncurses5-dev libncursesw5-dev git python3 rsync \
             cpio lzop ccache libelf-dev zip
 
-      - name: 🔧 Install GCC 12 Cross-Compiler
+      - name: 🔧 Install GCC Cross-Compiler for Android Kernel
         run: |
          sudo apt update
-         sudo apt install -y gcc-12-aarch64-linux-gnu
+         sudo apt install -y gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu
          echo "CROSS_COMPILE=aarch64-linux-gnu-" >> $GITHUB_ENV
 
       
@@ -109,6 +109,8 @@ jobs:
          cd kernel-source
          export ARCH=arm64
          export SUBARCH=arm64
+         export CROSS_COMPILE=aarch64-linux-gnu-
+         
 
          echo "🧹 Resetting original defconfig"
          make gta9_defconfig
