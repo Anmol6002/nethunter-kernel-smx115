@@ -109,21 +109,18 @@ jobs:
           export SUBARCH=arm64
           make mrproper
 
-      - name: 🧩 Merge Patched defconfig
+      - name: 🧩 Merge NetHunter Patches into Kernel defconfig
         run: |
          cd kernel-source
          export ARCH=arm64
          export SUBARCH=arm64
          make gta9_defconfig
-
-         sed -i '/^CONFIG_INIT_STACK_/d' arch/arm64/configs/gta9_defconfig
-         sed -i '/^CONFIG_INIT_STACK_/d' $GITHUB_WORKSPACE/gta9_defconfig_patched.config
+         sed -i '/^CONFIG_INIT_STACK_/d' arch/arm64/configs/gta9_defconfig || true
+         sed -i '/^CONFIG_INIT_STACK_/d' $GITHUB_WORKSPACE/gta9_defconfig_patched.config || true
          echo 'CONFIG_INIT_STACK_ALL_ZERO=y' >> $GITHUB_WORKSPACE/gta9_defconfig_patched.config
-
          cp $GITHUB_WORKSPACE/gta9_defconfig_patched.config .
          bash scripts/kconfig/merge_config.sh -m .config gta9_defconfig_patched.config
          cp .config arch/arm64/configs/gta9_defconfig
-         make mrproper
   
       - name: 🧹 Fix Kconfig newline warning
         run: |
@@ -152,22 +149,23 @@ jobs:
          export CC=$CLANG_PATH/bin/clang
          export CROSS_COMPILE=$CROSS_COMPILE
          export CLANG_TRIPLE=$CLANG_TRIPLE
-
+         export KCFLAGS="-Wno-frame-larger-than=2048"
+         export KBUILD_CFLAGS="-Wno-frame-larger-than=2048"
          echo "📦 Using Clang from: $CC"
          $CC --version || echo "❌ Clang not found!"
-
          echo "📦 Using GCC Cross-Compiler:"
          aarch64-linux-gnu-gcc --version || echo "❌ GCC not found!"
-
-         echo "📄 Running defconfig..."
+         echo "📄 Copying merged defconfig..."
          mkdir -p out
-         make O=out gta9_defconfig > out/build.log 2>&1
-
+         cp arch/arm64/configs/gta9_defconfig out/.config
+         make O=out olddefconfig
          echo "🔨 Starting kernel build (will continue on error)..."
          make -j$(nproc) O=out \
          CC=$CC \
          CROSS_COMPILE=$CROSS_COMPILE \
          CLANG_TRIPLE=$CLANG_TRIPLE \
+         KCFLAGS="$KCFLAGS" \
+         KBUILD_CFLAGS="$KBUILD_CFLAGS" \
          LD=aarch64-linux-gnu-ld \
          AR=aarch64-linux-gnu-ar \
          NM=aarch64-linux-gnu-nm \
@@ -175,23 +173,18 @@ jobs:
          OBJDUMP=aarch64-linux-gnu-objdump \
          STRIP=aarch64-linux-gnu-strip \
          2>&1 | tee -a out/build.log || true
-
          echo "📦 Attempting modules_install..."
          make O=out INSTALL_MOD_PATH=$GITHUB_WORKSPACE/modules modules_install >> out/build.log 2>&1 || true
-
          echo "🧾 Kernel Build Summary (errors & warnings):"
          echo "========== ERRORS =========="
          grep -i "error:" out/build.log || echo "✅ No build errors found."
-
          echo "========== WARNINGS =========="
          grep -i "warning:" out/build.log || echo "✅ No build warnings found."
-
          echo "========== UNMET DEPENDENCIES =========="
          grep -i "unmet" out/build.log || echo "✅ No unmet dependencies found."
-
          echo "📦 Verifying output image..."
          file out/arch/arm64/boot/Image.gz-dtb || echo "❌ Output image not found!"
-      
+   
       - name: 📥 Download dtbo.img from GitHub
         run: |
           curl -L -o kernel-source/out/arch/arm64/boot/dtbo.img https://raw.githubusercontent.com/Anmol6002/nethunter-kernel-smx115/main/dtbo.img
