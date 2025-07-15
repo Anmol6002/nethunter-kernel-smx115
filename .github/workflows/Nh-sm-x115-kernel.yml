@@ -188,8 +188,11 @@ jobs:
          grep -i "error:" out/build.log || echo "✅ No build errors found."
          echo "========== WARNINGS =========="
          grep -i "warning:" out/build.log || echo "✅ No build warnings found."
-         echo "📦 Verifying output image..."
-         file out/arch/arm64/boot/Image.gz-dtb || echo "❌ Output image not found!"
+         echo "📦 Verifying build outputs..."
+
+         file out/arch/arm64/boot/Image || echo "❌ Kernel Image not found!"
+         [ -f out/.config ] && echo "✅ Kernel config (.config) found." || echo "❌ .config not found!"
+         find $GITHUB_WORKSPACE/modules -name '*.ko' | grep -q . && echo "✅ Kernel modules (*.ko) found." || echo "⚠️ No kernel modules found."
   
       - name: 📥 Download dtbo.img from GitHub
         run: |
