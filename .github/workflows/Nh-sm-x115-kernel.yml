@@ -170,6 +170,7 @@ jobs:
          export ARCH=arm64
          export SUBARCH=arm64
          export CC="$CLANG_PATH/bin/clang --target=aarch64-linux-android"
+         export "LD=$CLANG_PATH/bin/ld.lld"
          export LLVM=1
          export LLVM_IAS=1
          export CROSS_COMPILE=$CROSS_COMPILE
@@ -193,7 +194,7 @@ jobs:
          LLVM_IAS=1 \
          KCFLAGS="$KCFLAGS" \
          KBUILD_CFLAGS="$KBUILD_CFLAGS" \
-         LD=aarch64-linux-gnu-ld \
+         LD="$LD" \
          AR=aarch64-linux-gnu-ar \
          NM=aarch64-linux-gnu-nm \
          OBJCOPY=aarch64-linux-gnu-objcopy \
