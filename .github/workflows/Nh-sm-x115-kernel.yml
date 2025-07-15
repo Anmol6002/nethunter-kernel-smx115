@@ -169,7 +169,7 @@ jobs:
          cd kernel-source
          export ARCH=arm64
          export SUBARCH=arm64
-         export CC=$CLANG_PATH/bin/clang
+         export CC="$CLANG_PATH/bin/clang --target=aarch64-linux-android"
          export CROSS_COMPILE=$CROSS_COMPILE
          export CLANG_TRIPLE=$CLANG_TRIPLE
          export KCFLAGS="-Wno-frame-larger-than="
