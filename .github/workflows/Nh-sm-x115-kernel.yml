@@ -233,6 +233,9 @@ jobs:
             fi
           fi
 
+      - name: ⬅️ Return to Workspace Root
+        run: cd $GITHUB_WORKSPACE
+
       - name: 📁 Prepare AnyKernel3 (with modules + init.d)
         run: |
           git clone https://github.com/osm0sis/AnyKernel3.git
@@ -258,6 +261,10 @@ jobs:
           mkdir -p init.d
           echo -e '#!/system/bin/sh\necho "NetHunter init.d test script ran at boot."' > init.d/99nethunter.sh
           chmod +x init.d/99nethunter.sh
+          
+          # ✅ Add kernel config.gz (for inspection/debugging)
+          cp ../kernel-source/out/.config config.gz
+          gzip -f config.gz
 
       - name: 🧾 Add NetHunter Kernel Props (Magisk detection)
         run: |
