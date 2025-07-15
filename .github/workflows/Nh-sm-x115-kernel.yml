@@ -114,12 +114,23 @@ jobs:
          cd kernel-source
          export ARCH=arm64
          export SUBARCH=arm64
+
+         echo "🧹 Resetting original defconfig"
          make gta9_defconfig
+
+         echo "🛠️ Cleaning up INIT_STACK_ entries before merge"
          sed -i '/^CONFIG_INIT_STACK_/d' arch/arm64/configs/gta9_defconfig || true
          sed -i '/^CONFIG_INIT_STACK_/d' $GITHUB_WORKSPACE/gta9_defconfig_patched.config || true
          echo 'CONFIG_INIT_STACK_ALL_ZERO=y' >> $GITHUB_WORKSPACE/gta9_defconfig_patched.config
+
+         echo "🧩 Merging NetHunter config..."
          cp $GITHUB_WORKSPACE/gta9_defconfig_patched.config .
          bash scripts/kconfig/merge_config.sh -m .config gta9_defconfig_patched.config
+
+         echo "⚙️ Resolving final config..."
+         make olddefconfig
+
+         echo "💾 Saving merged config to gta9_defconfig"
          cp .config arch/arm64/configs/gta9_defconfig
 
       - name: 🧼 Clean After Merging defconfig
@@ -161,8 +172,8 @@ jobs:
          export CC=$CLANG_PATH/bin/clang
          export CROSS_COMPILE=$CROSS_COMPILE
          export CLANG_TRIPLE=$CLANG_TRIPLE
-         export KCFLAGS="-Wno-frame-larger-than=2048"
-         export KBUILD_CFLAGS="-Wno-frame-larger-than=2048"
+         export KCFLAGS="-Wno-frame-larger-than="
+         export KBUILD_CFLAGS="-Wno-frame-larger-than="
          echo "📦 Using Clang from: $CC"
          $CC --version || echo "❌ Clang not found!"
          echo "📦 Using GCC Cross-Compiler:"
