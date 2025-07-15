@@ -179,7 +179,7 @@ jobs:
          2>&1 | tee out/build.log || true
 
          echo "📦 Attempting modules_install..."
-         make O=out INSTALL_MOD_PATH=$GITHUB_WORKSPACE/modules modules_install >> out/build.log 2>&1 || true
+         make O=out INSTALL_MOD_PATH=$GITHUB_WORKSPACE/modules modules_install 2>&1 | tee -a out/build.log || true
 
          echo "🧾 Kernel Build Summary (errors & warnings):"
          echo "========== ERRORS =========="
