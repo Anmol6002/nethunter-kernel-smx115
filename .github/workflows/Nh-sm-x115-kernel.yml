@@ -198,7 +198,21 @@ jobs:
 
          echo "🎉 All potential %u + u64 format errors fixed with casting."
          echo "📝 Review changes with '.bak' backups before committing."
-      
+    
+      - name: 🔧 Patch strncpy → strscpy
+        run: |
+         find . -type f \( -name "*.c" -o -name "*.h" \) > all_files.txt
+         for f in $(cat all_files.txt); do cp "$f" "$f.bak"; done
+         grep -PnH 'strncpy\s*\(' -f all_files.txt > strncpy_lines.txt || true
+         while IFS= read -r line; do
+          file=$(echo "$line" | cut -d':' -f1)
+          lineno=$(echo "$line" | cut -d':' -f2)
+          content=$(sed "${lineno}q;d" "$file")
+          fixed=$(echo "$content" | sed 's/\bstrncpy\b/strscpy/')
+          echo "$fixed" | sed "${lineno}s/.*/$(sed 's/[&/\]/\\&/g' <<< "$fixed")/" -i "$file"
+          echo "✅ Patched $file:$lineno"
+         done < strncpy_lines.txt
+     
       - name: ⚙️ Build Kernel + Modules with GCC
         run: |
          cd kernel-source
