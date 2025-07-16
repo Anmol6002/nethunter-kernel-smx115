@@ -290,7 +290,19 @@ jobs:
          done < fix_llu.txt
 
          echo "🎉 Done patching %llu format bugs!"
-   
+
+      - name: 🩹 Manually fix %llu misuse with int/u32
+        run: |
+         cd kernel-source
+
+         echo "🛠 Patching fpsimd.c..."
+         sed -i '902s/%llu/%u/' arch/arm64/kernel/fpsimd.c
+         sed -i '904s/%llu/%u/' arch/arm64/kernel/fpsimd.c
+
+         echo "🛠 Patching printk.c..."
+         sed -i '1239s/%llu/%u/' kernel/printk/printk.c
+         echo "✅ Manual format string errors patched."
+      
       - name: ⚙️ Build Kernel + Modules with GCC
         run: |
          cd kernel-source
