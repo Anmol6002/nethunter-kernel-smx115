@@ -200,6 +200,7 @@ jobs:
 
       - name: 🧪 Scan for Format Specifier Errors (u64/s64 misuse)
         run: |
+         cd kernel-source
          echo "🔍 Scanning for incorrect printf format specifiers in pr_* calls..."
 
          echo "========== [%u + u64] MISUSE =========="
