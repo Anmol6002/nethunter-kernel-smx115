@@ -168,39 +168,51 @@ jobs:
          rm -rf out
          mkdir -p out
 
-      - name: 🔧 Fix printk %u with u64 variables
+      - name: 🛠 Patch printk %u + u64 format issues
         run: |
-         cd kernel-source
-         echo "🔍 Scanning for unsafe printk %u usage..."
-         U64_HINTS="time|timestamp|ino|offset|chunk|value|size|bytes|ratio|cold"
-         find . -type f \( -name "*.c" -o -name "*.h" \) > all_files.txt
-         for f in $(cat all_files.txt); do cp "$f" "$f.bak"; done
-         grep -PnH 'printk\(.*%u.*\b('$U64_HINTS')\b' -f all_files.txt > suspicious_lines.txt || true
-         grep -PnH 'pr_.*\(.*%u.*\b('$U64_HINTS')\b' -f all_files.txt >> suspicious_lines.txt || true
-         while IFS= read -r line; do
-         file=$(echo "$line" | cut -d':' -f1)
-         lineno=$(echo "$line" | cut -d':' -f2)
-         content=$(sed "${lineno}q;d" "$file")
-         modified=$(echo "$content" | sed 's/%u/%llu/')
-         modified=$(echo "$modified" | sed -E "s/([, \(])\s*($U64_HINTS)\b/\1(unsigned long long) \2/")
-         echo "$modified" | sed "${lineno}s/.*/$(sed 's/[&/\]/\\&/g' <<< "$modified")/" -i "$file"
-         echo "✅ Patched $file:$lineno"
-         done < suspicious_lines.txt
-    
+          cd kernel-source
+          echo "🔍 Searching for unsafe printk %%u usage with u64-type vars..."
+
+          U64_HINTS="time|timestamp|ino|offset|chunk|value|size|bytes|ratio|cold"
+
+          find . -type f \( -name "*.c" -o -name "*.h" \) > all_files.txt
+
+          echo "🔐 Backing up all .c/.h files before patching..."
+          for f in $(cat all_files.txt); do cp "$f" "$f.bak"; done
+
+          echo "⚙️  Scanning for printk() and pr_*() using %u with u64-ish args..."
+          xargs grep -nH 'printk(.*%u' < all_files.txt | grep -E "\b($U64_HINTS)\b" > suspicious_lines.txt || true
+          xargs grep -nH 'pr_.*(.*%u' < all_files.txt | grep -E "\b($U64_HINTS)\b" >> suspicious_lines.txt || true
+
+          echo "🔧 Replacing '%u' with '%llu' and casting args to (unsigned long long)..."
+          while IFS= read -r line; do
+            file=$(echo "$line" | cut -d':' -f1)
+            lineno=$(echo "$line" | cut -d':' -f2)
+            content=$(sed "${lineno}q;d" "$file")
+
+            modified=$(echo "$content" | sed 's/%u/%llu/')
+            modified=$(echo "$modified" | sed -E "s/([, \(])\s*($U64_HINTS)\b/\1(unsigned long long) \2/")
+
+            echo "$modified" | sed "${lineno}s/.*/$(sed 's/[&/\]/\\&/g' <<< "$modified")/" -i "$file"
+            echo "✅ Patched $file:$lineno"
+          done < suspicious_lines.txt
+
+          echo "🎉 All potential %u + u64 format errors fixed."
+
       - name: 🔧 Patch strncpy → strscpy
         run: |
-         cd kernel-source
-         find . -type f \( -name "*.c" -o -name "*.h" \) > all_files.txt
-         for f in $(cat all_files.txt); do cp "$f" "$f.bak"; done
-         grep -PnH 'strncpy\s*\(' -f all_files.txt > strncpy_lines.txt || true
-         while IFS= read -r line; do
-         file=$(echo "$line" | cut -d':' -f1)
-         lineno=$(echo "$line" | cut -d':' -f2)
-         content=$(sed "${lineno}q;d" "$file")
-         fixed=$(echo "$content" | sed 's/\bstrncpy\b/strscpy/')
-         echo "$fixed" | sed "${lineno}s/.*/$(sed 's/[&/\]/\\&/g' <<< "$fixed")/" -i "$file"
-         echo "✅ Patched $file:$lineno"
-         done < strncpy_lines.txt
+          cd kernel-source
+          find . -type f \( -name "*.c" -o -name "*.h" \) > all_files.txt
+          for f in $(cat all_files.txt); do cp "$f" "$f.bak"; done
+          xargs grep -nH 'strncpy(' < all_files.txt > strncpy_lines.txt || true
+          while IFS= read -r line; do
+            file=$(echo "$line" | cut -d':' -f1)
+            lineno=$(echo "$line" | cut -d':' -f2)
+            content=$(sed "${lineno}q;d" "$file")
+            fixed=$(echo "$content" | sed 's/\bstrncpy\b/strscpy/')
+            echo "$fixed" | sed "${lineno}s/.*/$(sed 's/[&/\]/\\&/g' <<< "$fixed")/" -i "$file"
+            echo "✅ Patched $file:$lineno"
+          done < strncpy_lines.txt
      
       - name: ⚙️ Build Kernel + Modules with GCC
         run: |
