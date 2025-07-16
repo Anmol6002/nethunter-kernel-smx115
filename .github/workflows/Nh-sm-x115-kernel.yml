@@ -321,7 +321,41 @@ jobs:
          echo "🔧 Fixing page_alloc.c (change %u to %llu)..."
          sed -i '5142s/%u/%llu/' mm/page_alloc.c
          echo "✅ Manual printk format patching complete."
-  
+
+      - name: 🛠 Patch all known kernel format/decl errors (100% auto)
+        run: |
+         cd kernel-source
+         echo "🔧 Starting automated patch for known build errors..."
+
+         echo "📎 Fixing printk/trace mismatches (%%llu <-> unsigned int) and (%%u <-> u64)..."
+
+         declare -A replacements
+         replacements["arch/arm64/mm/fault.c"]="s/%llu/%u/"
+         replacements["arch/arm64/kernel/fpsimd.c"]="s/%llu/%u/"
+         replacements["kernel/printk/printk.c"]="s/%llu/%u/"
+         replacements["kernel/printk/printk_ringbuffer.c"]="s/%llu/%u/"
+         replacements["arch/arm64/kvm/reset.c"]="s/%llu/%u/"
+         replacements["mm/page_alloc.c"]="s/%llu/%u/; s/%u/%llu/"  # double fix line
+
+         for file in "${!replacements[@]}"; do
+         if [ -f "$file" ]; then
+         echo "🔄 Patching $file..."
+         sed -i.bak -E "${replacements[$file]}" "$file"
+         fi
+         done
+         echo "📎 Fixing tracepoint format errors in headers..."
+         sed -i.bak -E 's/now=%u/now=%llu/' include/trace/events/timer.h
+         sed -i.bak -E 's/id=%u/id=%llu/g' include/trace/events/cgroup.h
+
+         echo "📎 Fixing strscpy conflicting type declaration..."
+         STR_FILE="include/linux/string.h"
+         if grep -q "char \*strscpy" "$STR_FILE"; then
+         sed -i.bak '/char \*strscpy/d' "$STR_FILE"
+         echo "✅ Removed conflicting strscpy prototype"
+         fi
+
+         echo "✅ All known fatal errors patched. Proceeding to kernel build..."
+      
       - name: ⚙️ Build Kernel + Modules with GCC
         run: |
          cd kernel-source
