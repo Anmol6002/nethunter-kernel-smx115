@@ -23,7 +23,7 @@ jobs:
    
       - name: Push kernel-5.10 to separate repo
         env:
-          GH_TOKEN: ${{ secrets.KERNEL_PUSH_TOKEN }}
+          GH_TOKEN: ${{ secrets.KERNEL_PUSH_TOKEN1 }}
         run: |
           cd kernel-only/kernel-5.10
           git init
