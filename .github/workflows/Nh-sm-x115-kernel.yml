@@ -200,6 +200,7 @@ jobs:
 
       - name: 🧪 Scan for Format Specifier Type Mismatches
         run: |
+         cd kernel-source
          echo "🔍 Scanning for printf format errors..."
          echo "========== [%u + u64] MISUSE =========="
          grep -RinP 'pr_\w+\s*\(.*%u' include/ kernel/ || echo "✅ No direct %u usage found"
