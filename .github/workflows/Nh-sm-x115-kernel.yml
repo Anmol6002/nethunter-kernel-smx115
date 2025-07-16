@@ -214,6 +214,15 @@ jobs:
             echo "$fixed" | sed "${lineno}s/.*/$(sed 's/[&/\]/\\&/g' <<< "$fixed")/" -i "$file"
             echo "✅ Patched $file:$lineno"
           done < strncpy_lines.txt
+
+      - name: 🩹 Fix strscpy duplicate declarations
+        run: |
+         cd kernel-source
+         FILE=include/linux/string.h
+         echo "🔍 Patching duplicate strscpy declarations in $FILE..."
+         sed -i '/extern char \* strscpy.*__kernel_size_t/d' $FILE
+         grep -q "ssize_t strscpy" $FILE || echo 'ssize_t strscpy(char *dest, const char *src, size_t count);' >> $FILE
+         echo "✅ Patched strscpy declaration"
      
       - name: ⚙️ Build Kernel + Modules with GCC
         run: |
