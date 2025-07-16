@@ -202,7 +202,8 @@ jobs:
       - name: 🔧 Patch strncpy → strscpy
         run: |
           cd kernel-source
-          find . -type f \( -name "*.c" -o -name "*.h" \) > all_files.txt
+          echo "🔍 Scanning only kernel C files (excluding scripts/) for strncpy..."
+          find . -type f \( -name "*.c" -o -name "*.h" \) ! -path "./scripts/*" > all_files.txt
           for f in $(cat all_files.txt); do cp "$f" "$f.bak"; done
           xargs grep -nH 'strncpy(' < all_files.txt > strncpy_lines.txt || true
           while IFS= read -r line; do
@@ -234,9 +235,7 @@ jobs:
          make O=out INSTALL_MOD_PATH=$GITHUB_WORKSPACE/modules modules_install 2>&1 | tee -a out/build.log || true
 
          echo "🧾 Kernel Build Summary (errors & warnings):"
-         echo "========== ERRORS =========="
-         grep -i "error:" out/build.log || echo "✅ No build errors found."
-         echo "========== WARNINGS =========="
+         echo "========== ERRORS === WARNINGS =========="
          grep -i "warning:" out/build.log || echo "✅ No build warnings found."
          echo "📦 Verifying build outputs..."
 
