@@ -355,7 +355,43 @@ jobs:
          fi
 
          echo "✅ All known fatal errors patched. Proceeding to kernel build..."
-      
+      - name: 🛠 Patch all %llu/%u printk/trace mismatches (full log fix)
+        run: |
+         cd kernel-source
+         echo "🔧 Patching format mismatches in printk/trace statements..."
+
+         # --------- Fixes for every error ---------
+         # Format: sed -i.bak 's/<wrong_format>/<correct_format>/g' <file>
+
+         ## arch/arm64/mm/fault.c
+         sed -i.bak -E \
+           -e 's/%llu/%u/g' \
+           -e 's/%u-bit/%llu-bit/g' \
+         arch/arm64/mm/fault.c
+         sed -i.bak -E \
+           -e 's/"%u,%u,%llu/%u,%u,%u/' \
+           -e 's/"dropped %u messages/"dropped %llu messages/' \
+         kernel/printk/printk.c
+         sed -i.bak 's/%llu/%u/g' kernel/printk/printk_ringbuffer.c
+         sed -i.bak 's/%llu/%u/g' arch/arm64/kvm/reset.c
+
+         sed -i.bak 's/"Hashing block %u of %llu/"Hashing block %llu of %llu/' fs/verity/enable.c
+
+         sed -i.bak 's/now=%u/now=%llu/' include/trace/events/timer.h
+
+         sed -i.bak -E 's/id=%u/id=%llu/g' include/trace/events/cgroup.h
+         sed -i.bak -E 's/dst_id=%u/dst_id=%llu/g' include/trace/events/cgroup.h
+         sed -i.bak -E 's/val=%d/val=%llu/g' include/trace/events/cgroup.h
+
+         sed -i.bak -E \
+           -e 's/order:%llu/order:%u/' \
+           -e 's/timeJS\(ms\):%llu\|%u/timeJS(ms):%u|%u/' \
+           -e 's/Built %llu zonelists/Built %u zonelists/' \
+           -e 's/LIFO batch:%llu/LIFO batch:%u/' \
+           -e 's/local_pcp:%llukB/local_pcp:%ukB/' \
+           mm/page_alloc.c
+         echo "✅ Format string issues fully patched."
+    
       - name: ⚙️ Build Kernel + Modules with GCC
         run: |
          cd kernel-source
