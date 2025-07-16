@@ -302,7 +302,26 @@ jobs:
          echo "🛠 Patching printk.c..."
          sed -i '1239s/%llu/%u/' kernel/printk/printk.c
          echo "✅ Manual format string errors patched."
-      
+
+      - name: 🛠 Manual fix remaining printk format string mismatches
+        run: |
+         cd kernel-source
+
+         echo "🔧 Fixing printk_ringbuffer.c..."
+         sed -i '1413s/%llu/%u/' kernel/printk/printk_ringbuffer.c
+
+         echo "🔧 Fixing reset.c..."
+         sed -i '65s/%llu/%u/' arch/arm64/kvm/reset.c
+
+         echo "🔧 Fixing fpsimd.c (already done earlier, redundant safety)..."
+         sed -i '902s/%llu/%u/' arch/arm64/kernel/fpsimd.c || true
+         sed -i '904s/%llu/%u/' arch/arm64/kernel/fpsimd.c || true
+         echo "🔧 Fixing printk.c..."
+         sed -i '1239s/%llu/%u/' kernel/printk/printk.c
+         echo "🔧 Fixing page_alloc.c (change %u to %llu)..."
+         sed -i '5142s/%u/%llu/' mm/page_alloc.c
+         echo "✅ Manual printk format patching complete."
+  
       - name: ⚙️ Build Kernel + Modules with GCC
         run: |
          cd kernel-source
