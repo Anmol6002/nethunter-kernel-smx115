@@ -197,7 +197,23 @@ jobs:
          file out/arch/arm64/boot/Image || echo "❌ Kernel Image not found!"
          [ -f out/.config ] && echo "✅ Kernel config (.config) found." || echo "❌ .config not found!"
          find $GITHUB_WORKSPACE/modules -name '*.ko' | grep -q . && echo "✅ Kernel modules (*.ko) found." || echo "⚠️ No kernel modules found."
-  
+
+      - name: 🧪 Scan for Format Specifier Errors (u64/s64 misuse)
+        run: |
+         echo "🔍 Scanning for incorrect printf format specifiers in pr_* calls..."
+
+         echo "========== [%u + u64] MISUSE =========="
+         grep -RinP 'pr_\w+\s*\(.*%u' include/ kernel/ || echo "✅ No direct %u usage in pr_* found"
+         grep -Rin 'pr_.*%u' include/ kernel/ | grep -C 3 -i 'u64' || echo "✅ No u64 + %u misuse patterns found"
+
+         echo "========== [%d + s64] MISUSE =========="
+         grep -RinP 'pr_\w+\s*\(.*%d' include/ kernel/ || echo "✅ No direct %d usage in pr_* found"
+         grep -Rin 'pr_.*%d' include/ kernel/ | grep -C 3 -i 's64' || echo "✅ No s64 + %d misuse patterns found"
+
+         echo "========== [%lu + u64] MISUSE =========="
+         grep -RinP 'pr_\w+\s*\(.*%lu' include/ kernel/ || echo "✅ No direct %lu usage in pr_* found"
+         grep -Rin 'pr_.*%lu' include/ kernel/ | grep -C 3 -i 'u64' || echo "✅ No u64 + %lu misuse patterns found"
+        
       - name: 📥 Download dtbo.img from GitHub Release
         run: |
          curl -L -o kernel-source/out/arch/arm64/boot/dtbo.img \
