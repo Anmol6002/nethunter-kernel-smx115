@@ -201,16 +201,10 @@ jobs:
       - name: 🧪 Scan for Format Specifier Type Mismatches
         run: |
          cd kernel-source
-         echo "🔍 Scanning for printf format errors..."
-         echo "========== [%u + u64] MISUSE =========="
-         grep -RinP 'pr_\w+\s*\(.*%u' include/ kernel/ || echo "✅ No direct %u usage found"
-         grep -Rin 'pr_.*%u' include/ kernel/ | grep -C 3 -i 'u64' || echo "✅ No u64 + %u misuse patterns found"
-         echo "========== [%d + s64] MISUSE =========="
-         grep -RinP 'pr_\w+\s*\(.*%d' include/ kernel/ || echo "✅ No direct %d usage found"
-         grep -Rin 'pr_.*%d' include/ kernel/ | grep -C 3 -i 's64' || echo "✅ No s64 + %d misuse patterns found"
-         echo "========== [%lu + u64] MISUSE =========="
-         grep -RinP 'pr_\w+\s*\(.*%lu' include/ kernel/ || echo "✅ No direct %lu usage found"
-         grep -Rin 'pr_.*%lu' include/ kernel/ | grep -C 3 -i 'u64' || echo "✅ No u64 + %lu misuse patterns found"
+         echo "🧪 Checking printk/pr_* with %u and u64..."
+         grep -RinP 'printk\s*\(.*%u' kernel/ include/ | grep -C 3 -i 'u64' || echo "✅ No printk %u + u64 issue"
+         grep -RinP 'pr_\w+\s*\(.*%u' kernel/ include/ | grep -C 3 -i 'u64' || echo "✅ No pr_* %u + u64 issue"
+         
 
       - name: 📥 Download dtbo.img from GitHub Release
         run: |
