@@ -401,8 +401,8 @@ jobs:
          sed -i.bak 's/%llu/%u/g' include/trace/events/cgroup.h
          sed -i.bak 's/%llu/%u/g' mm/page_alloc.c
          sed -i.bak 's/"Level %d is %u blocks starting at index %llu/"Level %d is %llu blocks starting at index %llu/' fs/verity/open.c
-         sed -i.bak 's/"Hashing block %u of %llu/"Hashing block %llu of %llu/' fs/verity/e
-         sed -i.bak '/scnprintf/s/[^"]*%u,%u,%llu,%c%s[^"]*/"%u,%u,%u,%c%s"/' kernel/printk/printk.
+         sed -i.bak 's/"Hashing block %u of %llu/"Hashing block %llu of %llu/' fs/verity/enable.c
+         sed -i.bak '/scnprintf/s/[^"]*%u,%u,%llu,%c%s[^"]*/"%u,%u,%u,%c%s"/' kernel/printk/printk.c
          echo "✅ Format issues corrected."
     
       - name: ⚙️ Build Kernel + Modules with GCC
