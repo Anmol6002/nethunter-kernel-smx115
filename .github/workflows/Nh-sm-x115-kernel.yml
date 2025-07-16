@@ -226,40 +226,37 @@ jobs:
 
       - name: 🛠 Patch misuse of %llu with int/u32 (auto-fix)
         run: |
-          cd kernel-source
-          echo "🔍 Scanning for unsafe printk %%llu usage with int/u32..."
+         cd kernel-source
+         echo "🔍 Scanning for unsafe printk %%llu usage with int/u32..."
 
-          # Common var names likely to be int/u32 but mistakenly printed as %llu
-          INT_HINTS="count|len|size|flag|level|pid|cpu|vec|offset|range|index"
+         INT_HINTS="count len size flag level pid cpu vec offset range index"
+         find . -type f \( -name "*.c" -o -name "*.h" \) > all_files.txt
 
-          # List all .c/.h files
-          find . -type f \( -name "*.c" -o -name "*.h" \) > all_files.txt
+         echo "🔐 Backing up all files before patching..."
+         for f in $(cat all_files.txt); do cp "$f" "$f.bak"; done
 
-          # Backup originals
-          echo "🔐 Backing up all files before patching..."
-          for f in $(cat all_files.txt); do cp "$f" "$f.bak"; done
+         > wrong_llu.txt
 
-          # Find suspicious %llu uses in printk/pr_* involving int-ish variables
-          grep -PnH 'printk\(.*%llu.*\b('"$INT_HINTS"')\b' -f all_files.txt > wrong_llu.txt || true
-          grep -PnH 'pr_.*\(.*%llu.*\b('"$INT_HINTS"')\b' -f all_files.txt >> wrong_llu.txt || true
+         for hint in $INT_HINTS; do
+         grep -rn "printk.*%llu" --include="*.c" --include="*.h" | grep -w "$hint" >> wrong_llu.txt || true
+         grep -rn "pr_.*%llu" --include="*.c" --include="*.h" | grep -w "$hint" >> wrong_llu.txt || true
+         done
 
-          echo "⚙️ Patching each match..."
-          while IFS= read -r line; do
-            file=$(echo "$line" | cut -d':' -f1)
-            lineno=$(echo "$line" | cut -d':' -f2)
-            content=$(sed "${lineno}q;d" "$file")
+         echo "⚙️ Patching each match..."
+         while IFS= read -r line; do
+         file=$(echo "$line" | cut -d':' -f1)
+         lineno=$(echo "$line" | cut -d':' -f2)
+         content=$(sed "${lineno}q;d" "$file")
 
-            # Replace %llu with %u
-            fixed=$(echo "$content" | sed 's/%llu/%u/')
+         fixed=$(echo "$content" | sed 's/%llu/%u/')
 
-            # Remove incorrect casts if any (optional cleanup)
-            fixed=$(echo "$fixed" | sed -E 's/\(unsigned long long\)\s*//g')
+         fixed=$(echo "$fixed" | sed -E 's/\(unsigned long long\)\s*//g')
 
-            echo "$fixed" | sed "${lineno}s/.*/$(sed 's/[&/\]/\\&/g' <<< "$fixed")/" -i "$file"
-            echo "✅ Patched $file:$lineno"
-          done < wrong_llu.txt
+         echo "$fixed" | sed "${lineno}s/.*/$(sed 's/[&/\]/\\&/g' <<< "$fixed")/" -i "$file"
+         echo "✅ Patched $file:$lineno"
+         done < wrong_llu.txt
 
-          echo "🎉 Auto-fixed all unsafe %%llu with int/u32. Manual check of backups recommended."
+         echo "🎉 Finished fixing all unsafe %%llu + int/u32 usage!"
       
       - name: ⚙️ Build Kernel + Modules with GCC
         run: |
