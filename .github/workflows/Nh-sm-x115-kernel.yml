@@ -257,7 +257,40 @@ jobs:
          done < wrong_llu.txt
 
          echo "🎉 Finished fixing all unsafe %%llu + int/u32 usage!"
-      
+    
+      - name: 🛠 Patch misuse of %llu with non-u64 (auto-fix)
+        run: |
+         cd kernel-source
+         echo "🔍 Scanning for bad %%llu format with int/u32 types..."
+
+         HINTS="len|size|count|pid|cpu|vec|offset|range|index|log_buf_len|vl"
+
+         find . -type f \( -name "*.c" -o -name "*.h" \) > all_files.txt
+         echo "🔐 Backing up files before modifying..."
+         for f in $(cat all_files.txt); do cp "$f" "$f.bak"; done
+
+         > fix_llu.txt
+         for h in $HINTS; do
+         grep -rn "printk.*%llu" --include="*.c" --include="*.h" | grep -w "$h" >> fix_llu.txt || true
+         grep -rn "pr_.*%llu" --include="*.c" --include="*.h" | grep -w "$h" >> fix_llu.txt || true
+         done
+
+         echo "⚙️ Fixing bad %llu format issues..."
+         while IFS= read -r line; do
+         file=$(echo "$line" | cut -d':' -f1)
+         lineno=$(echo "$line" | cut -d':' -f2)
+         orig=$(sed "${lineno}q;d" "$file")
+
+         fixed=$(echo "$orig" | sed 's/%llu/%u/')
+
+         fixed=$(echo "$fixed" | sed -E 's/\(unsigned long long\)\s*//g')
+
+         echo "$fixed" | sed "${lineno}s/.*/$(sed 's/[&/\]/\\&/g' <<< "$fixed")/" -i "$file"
+         echo "✅ Fixed $file:$lineno"
+         done < fix_llu.txt
+
+         echo "🎉 Done patching %llu format bugs!"
+   
       - name: ⚙️ Build Kernel + Modules with GCC
         run: |
          cd kernel-source
