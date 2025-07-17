@@ -13,92 +13,68 @@ jobs:
 
     - name: Set up environment variables
       run: |
-        echo "TOOLCHAIN_DIR=$HOME/toolchain" >> $GITHUB_ENV
+        echo "TOOLCHAIN_DIR=$HOME/gcc-arm64" >> $GITHUB_ENV
         echo "KERNEL_DIR=$HOME/kernel-source" >> $GITHUB_ENV
         echo "OUT_DIR=$HOME/out" >> $GITHUB_ENV
         echo "ARCH=arm64" >> $GITHUB_ENV
         echo "SUBARCH=arm64" >> $GITHUB_ENV
-        echo "CROSS_COMPILE=$HOME/toolchain/bin/aarch64-linux-android-" >> $GITHUB_ENV
+        echo "CROSS_COMPILE=$HOME/gcc-arm64/bin/aarch64-elf-" >> $GITHUB_ENV
 
-    - name: Download & extract toolchain
+    - name: Clone arter97 arm64 GCC toolchain
       run: |
-        wget -q https://github.com/Anmol6002/nethunter-kernel-smx115/releases/download/v1.0-toolchain/toolchain.tar.gz -O toolchain.tar.gz
-        mkdir -p $TOOLCHAIN_DIR
-        tar -xf toolchain.tar.gz -C $TOOLCHAIN_DIR --strip-components=1
+        git clone --depth=1 https://github.com/arter97/arm64-gcc.git $HOME/gcc-arm64
 
     - name: Clone kernel source
       run: |
         git clone --depth=1 https://github.com/Anmol6002/kernel_smx115_nethunter $KERNEL_DIR
 
-
-
     - name: 🧩 Add CAN support submodules and patch kernel tree
       shell: bash
       run: |
-       cd $KERNEL_DIR
+        cd $KERNEL_DIR
+        mkdir -p drivers/net/can include/uapi/linux/can
+        git submodule add https://github.com/V0lk3n/usb-can-2-module drivers/net/can/usb-can-2-module || true
+        git submodule add https://github.com/V0lk3n/can-isotp drivers/net/can/can-isotp || true
+        git submodule add https://github.com/V0lk3n/elmcan drivers/net/can/elmcan || true
+        git submodule update --init --recursive
 
-       echo "📦 Creating CAN directory structure..."
-       mkdir -p drivers/net/can include/uapi/linux/can
+        {
+        echo 'source "drivers/net/can/usb-can-2-module/Kconfig"'
+        echo 'source "drivers/net/can/can-isotp/Kconfig"'
+        echo ''
+        echo 'config CAN_CAN327'
+        echo '	tristate "Serial / USB serial ELM327 based OBD-II Interfaces (can327)"'
+        echo '	depends on TTY'
+        echo '	select CAN_RX_OFFLOAD'
+        echo '	help'
+        echo '	  CAN driver for several '\''low cost'\'' OBD-II interfaces based on the'
+        echo '	  ELM327 OBD-II interpreter chip.'
+        echo ''
+        echo '	  This is a best effort driver - the ELM327 interface was never'
+        echo '	  designed to be used as a standalone CAN interface. However, it can'
+        echo '	  still be used for simple request-response protocols (such as OBD II),'
+        echo '	  and to monitor broadcast messages on a bus (such as in a vehicle).'
+        echo ''
+        echo '	  Please refer to the documentation for information on how to use it:'
+        echo '	  Documentation/networking/device_drivers/can/can327.rst'
+        } >> drivers/net/can/Kconfig
 
-       echo "🔗 Adding CAN-related Git submodules..."
-       git submodule add https://github.com/V0lk3n/usb-can-2-module drivers/net/can/usb-can-2-module || true
-       git submodule add https://github.com/V0lk3n/can-isotp drivers/net/can/can-isotp || true
-       git submodule add https://github.com/V0lk3n/elmcan drivers/net/can/elmcan || true
-       git submodule update --init --recursive
+        {
+        echo 'obj-y += usb-can-2-module/'
+        echo 'obj-y += can-isotp/'
+        echo 'obj-$(CONFIG_CAN_CAN327) += can327.o'
+        } >> drivers/net/can/Makefile
 
-       echo "🧩 Patching Kconfig with CAN drivers..."
-       {
-       echo 'source "drivers/net/can/usb-can-2-module/Kconfig"'
-       echo 'source "drivers/net/can/can-isotp/Kconfig"'
-       echo ''
-       echo 'config CAN_CAN327'
-       echo '	tristate "Serial / USB serial ELM327 based OBD-II Interfaces (can327)"'
-       echo '	depends on TTY'
-       echo '	select CAN_RX_OFFLOAD'
-       echo '	help'
-       echo '	  CAN driver for several '\''low cost'\'' OBD-II interfaces based on the'
-       echo '	  ELM327 OBD-II interpreter chip.'
-       echo ''
-       echo '	  This is a best effort driver - the ELM327 interface was never'
-       echo '	  designed to be used as a standalone CAN interface. However, it can'
-       echo '	  still be used for simple request-response protocols (such as OBD II),'
-       echo '	  and to monitor broadcast messages on a bus (such as in a vehicle).'
-       echo ''
-       echo '	  Please refer to the documentation for information on how to use it:'
-       echo '	  Documentation/networking/device_drivers/can/can327.rst'
-       } >> drivers/net/can/Kconfig
+        cp drivers/net/can/elmcan/can327.c drivers/net/can/
+        curl -Lo include/uapi/linux/can/isotp.h https://raw.githubusercontent.com/V0lk3n/can-isotp/master/include/uapi/linux/can/isotp.h
+        grep -q "CAN_ISOTP_CF_BROADCAST" include/uapi/linux/can/isotp.h || echo '#define CAN_ISOTP_CF_BROADCAST 0x80' >> include/uapi/linux/can/isotp.h
 
-       echo "📁 Updating Makefile for CAN drivers..."
-       {
-       echo 'obj-y += usb-can-2-module/'
-       echo 'obj-y += can-isotp/'
-       echo 'obj-$(CONFIG_CAN_CAN327) += can327.o'
-       } >> drivers/net/can/Makefile
-
-       echo "📄 Copying ELMCAN driver to CAN directory..."
-       cp drivers/net/can/elmcan/can327.c drivers/net/can/
-
-       echo "🧷 Downloading isotp.h header..."
-       curl -Lo include/uapi/linux/can/isotp.h https://raw.githubusercontent.com/V0lk3n/can-isotp/master/include/uapi/linux/can/isotp.h
-
-       echo "⚙️ Ensuring CAN macro exists in header..."
-       CAN_HEADER="include/uapi/linux/can/isotp.h"
-       grep -q "CAN_ISOTP_CF_BROADCAST" "$CAN_HEADER" || echo '#define CAN_ISOTP_CF_BROADCAST 0x80' >> "$CAN_HEADER"
-
-
-    
     - name: Merge patched defconfig into base
       run: |
         BASE_CONFIG="$KERNEL_DIR/arch/arm64/configs/gta9_defconfig"
         PATCHED="$GITHUB_WORKSPACE/gta9_defconfig_patched.config"
-
-        # Ensure base config exists
         [ -f "$BASE_CONFIG" ] || (echo "Base config missing!" && exit 1)
-
-        # Merge: append unique new lines from patched config
         grep -vxFf "$BASE_CONFIG" "$PATCHED" >> "$BASE_CONFIG"
-
-        # Add CAN configs if missing
         grep -q 'CONFIG_CAN_USB_CAN_2' "$BASE_CONFIG" || echo 'CONFIG_CAN_USB_CAN_2=m' >> "$BASE_CONFIG"
         grep -q 'CONFIG_USB_CAN_2' "$BASE_CONFIG" || echo 'CONFIG_USB_CAN_2=m' >> "$BASE_CONFIG"
 
