@@ -22,8 +22,8 @@ jobs:
 
     - name: Clone arter97 arm64 GCC toolchain
       run: |
-        git clone --depth=1 https://github.com/arter97/arm64-gcc.git $HOME/gcc-arm64
-
+        git clone --depth=1 https://github.com/theradcolor/aarch64-elf -b stable-gcc $HOME/gcc-arm64
+   
     - name: Clone kernel source
       run: |
         git clone --depth=1 https://github.com/Anmol6002/kernel_smx115_nethunter $KERNEL_DIR
