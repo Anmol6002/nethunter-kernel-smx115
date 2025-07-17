@@ -22,7 +22,7 @@ jobs:
 
     - name: Clone arter97 arm64 GCC toolchain
       run: |
-        git clone --depth=1 https://github.com/radcolor/aarch64-elf -b stable-gcc $HOME/gcc-arm64
+        git clone --depth=1 https://github.com/radcolor/aarch64-elf $HOME/gcc-arm64
    
     - name: Clone kernel source
       run: |
