@@ -80,7 +80,7 @@ jobs:
 
     - name: 🩹 Disable ABI Check in Makefiles
       run: |
-       grep -rl 'abi_symbollist.raw' kernel-source | while read file; do
+       grep -rl 'abi_symbollist.raw' $KERNEL_DIR | while read file; do
        echo "Disabling ABI check in $file"
        sed -i '/abi_symbollist.raw/ s/^/#/' "$file"
        done
