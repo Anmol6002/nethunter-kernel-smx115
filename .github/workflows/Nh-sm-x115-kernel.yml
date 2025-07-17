@@ -78,6 +78,13 @@ jobs:
         grep -q 'CONFIG_CAN_USB_CAN_2' "$BASE_CONFIG" || echo 'CONFIG_CAN_USB_CAN_2=m' >> "$BASE_CONFIG"
         grep -q 'CONFIG_USB_CAN_2' "$BASE_CONFIG" || echo 'CONFIG_USB_CAN_2=m' >> "$BASE_CONFIG"
 
+    - name: 🩹 Disable ABI Check in Makefiles
+      run: |
+       grep -rl 'abi_symbollist.raw' kernel-source | while read file; do
+       echo "Disabling ABI check in $file"
+       sed -i '/abi_symbollist.raw/ s/^/#/' "$file"
+       done
+    
     - name: Build kernel
       run: |
         cd $KERNEL_DIR
