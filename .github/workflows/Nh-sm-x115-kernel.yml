@@ -69,6 +69,13 @@ jobs:
         curl -Lo include/uapi/linux/can/isotp.h https://raw.githubusercontent.com/V0lk3n/can-isotp/master/include/uapi/linux/can/isotp.h
         grep -q "CAN_ISOTP_CF_BROADCAST" include/uapi/linux/can/isotp.h || echo '#define CAN_ISOTP_CF_BROADCAST 0x80' >> include/uapi/linux/can/isotp.h
 
+    - name: 🧹 Clean Tree (mrproper)
+      run: |
+       cd $KERNEL_DIR
+       export ARCH=arm64
+       export SUBARCH=arm64
+       make O=$OUT_DIR mrproper 
+
     - name: 🧩 Merge NetHunter Patches into Kernel defconfig
       run: |
        cd $KERNEL_DIR
@@ -81,16 +88,6 @@ jobs:
        make O=$OUT_DIR gta9_defconfig
 
        echo "🧩 Merging NetHunter config..."
-       cp $GITHUB_WORKSPACE/gta9_defconfig_patched.config $OUT_DIR/
-       bash scripts/kconfig/merge_config.sh -m $OUT_DIR/.config $OUT_DIR/gta9_defconfig_patched.config
-
-       echo "🧼 Cleaning build tree before resolving config"
-       make O=$OUT_DIR mrproper
-
-       echo "♻️ Rebuilding base defconfig"
-       make O=$OUT_DIR gta9_defconfig
-
-       echo "📎 Re-merging patched config"
        cp $GITHUB_WORKSPACE/gta9_defconfig_patched.config $OUT_DIR/
        bash scripts/kconfig/merge_config.sh -m $OUT_DIR/.config $OUT_DIR/gta9_defconfig_patched.config
 
