@@ -20,10 +20,6 @@ jobs:
         echo "SUBARCH=arm64" >> $GITHUB_ENV
         echo "CROSS_COMPILE=$HOME/gcc-arm64/bin/aarch64-elf-" >> $GITHUB_ENV
 
-    - name: Clone radcolor aarch64-elf GCC toolchain
-      run: |
-        git clone --depth=1 https://github.com/radcolor/aarch64-elf $HOME/gcc-arm64
-   
     - name: Clone kernel source
       run: |
         git clone --depth=1 https://github.com/Anmol6002/kernel_smx115_nethunter $KERNEL_DIR
@@ -69,12 +65,30 @@ jobs:
         curl -Lo include/uapi/linux/can/isotp.h https://raw.githubusercontent.com/V0lk3n/can-isotp/master/include/uapi/linux/can/isotp.h
         grep -q "CAN_ISOTP_CF_BROADCAST" include/uapi/linux/can/isotp.h || echo '#define CAN_ISOTP_CF_BROADCAST 0x80' >> include/uapi/linux/can/isotp.h
 
+    - name: 🛠️ Install Dependencies
+      run: |
+       sudo apt update
+       sudo apt install -y build-essential bc bison flex libssl-dev \
+       libncurses5-dev libncursesw5-dev git python3 rsync \
+       cpio lzop ccache libelf-dev zip
+          
+    - name: Clone radcolor aarch64-elf GCC toolchain
+      run: |
+        git clone --depth=1 https://github.com/radcolor/aarch64-elf $HOME/gcc-arm64
+
+    - name: 🩹 Disable ABI Check in Makefiles
+      run: |
+       grep -rl 'abi_symbollist.raw' $KERNEL_DIR | while read file; do
+       echo "Disabling ABI check in $file"
+       sed -i '/abi_symbollist.raw/ s/^/#/' "$file"
+       done
+       
     - name: 🧹 Clean Tree (mrproper)
       run: |
        cd $KERNEL_DIR
        export ARCH=arm64
        export SUBARCH=arm64
-       make mrproper 
+       make O=$OUT_DIR mrproper 
 
     - name: 🧩 Merge NetHunter Patches into Kernel defconfig
       run: |
@@ -96,13 +110,13 @@ jobs:
 
        echo "💾 Saving merged config to gta9_defconfig"
        cp $OUT_DIR/.config arch/arm64/configs/gta9_defconfig  
-     
-    - name: 🩹 Disable ABI Check in Makefiles
+  
+    - name: 🧹 Clean Tree (mrproper)
       run: |
-       grep -rl 'abi_symbollist.raw' $KERNEL_DIR | while read file; do
-       echo "Disabling ABI check in $file"
-       sed -i '/abi_symbollist.raw/ s/^/#/' "$file"
-       done
+       cd $KERNEL_DIR
+       export ARCH=arm64
+       export SUBARCH=arm64
+       make O=$OUT_DIR mrproper 
 
     - name: Build kernel
       run: |
