@@ -124,12 +124,17 @@ jobs:
        mkdir -p $OUT_DIR
        echo "Using defconfig..."
        make O=$OUT_DIR ARCH=arm64 CROSS_COMPILE=$CROSS_COMPILE gta9_defconfig
+       
        echo "Building kernel image..."
-       make -j$(nproc) O=$OUT_DIR ARCH=arm64 CROSS_COMPILE=$CROSS_COMPILE
+       (while true; do echo "⏳ Building kernel... $(date)"; sleep 60; done) &
+       KEEP_ALIVE_PID=$!
+       
+       make -j4 O=$OUT_DIR ARCH=arm64 CROSS_COMPILE=$CROSS_COMPILE
+       kill $KEEP_ALIVE_PID
        echo "Building kernel modules..."
-       make -j$(nproc) O=$OUT_DIR ARCH=arm64 CROSS_COMPILE=$CROSS_COMPILE modules
+       make -j4 O=$OUT_DIR ARCH=arm64 CROSS_COMPILE=$CROSS_COMPILE modules
        echo "Installing modules..."
-       make -j$(nproc) O=$OUT_DIR ARCH=arm64 CROSS_COMPILE=$CROSS_COMPILE INSTALL_MOD_PATH=$OUT_DIR/modules modules_install
+       make -j4 O=$OUT_DIR ARCH=arm64 CROSS_COMPILE=$CROSS_COMPILE INSTALL_MOD_PATH=$OUT_DIR/modules modules_install
     
     - name: Archive output
       run: |
