@@ -69,15 +69,24 @@ jobs:
         curl -Lo include/uapi/linux/can/isotp.h https://raw.githubusercontent.com/V0lk3n/can-isotp/master/include/uapi/linux/can/isotp.h
         grep -q "CAN_ISOTP_CF_BROADCAST" include/uapi/linux/can/isotp.h || echo '#define CAN_ISOTP_CF_BROADCAST 0x80' >> include/uapi/linux/can/isotp.h
 
-    - name: Merge patched defconfig into base
+    - name: Merge patched defconfig into base (no duplicates)
       run: |
-        BASE_CONFIG="$KERNEL_DIR/arch/arm64/configs/gta9_defconfig"
-        PATCHED="$GITHUB_WORKSPACE/gta9_defconfig_patched.config"
-        [ -f "$BASE_CONFIG" ] || (echo "Base config missing!" && exit 1)
-        grep -vxFf "$BASE_CONFIG" "$PATCHED" >> "$BASE_CONFIG"
-        grep -q 'CONFIG_CAN_USB_CAN_2' "$BASE_CONFIG" || echo 'CONFIG_CAN_USB_CAN_2=m' >> "$BASE_CONFIG"
-        grep -q 'CONFIG_USB_CAN_2' "$BASE_CONFIG" || echo 'CONFIG_USB_CAN_2=m' >> "$BASE_CONFIG"
+       BASE_CONFIG="$KERNEL_DIR/arch/arm64/configs/gta9_defconfig"
+       PATCHED="$GITHUB_WORKSPACE/gta9_defconfig_patched.config"
+       [ -f "$BASE_CONFIG" ] || (echo "Base config missing!" && exit 1)
+       while read -r line; do
+       [[ -z "$line" || "$line" =~ ^# ]] && continue
+       key=$(echo "$line" | cut -d= -f1)
+       if grep -q "^$key=" "$BASE_CONFIG"; then
+        sed -i "s|^$key=.*|$line|" "$BASE_CONFIG"
+       else
+        echo "$line" >> "$BASE_CONFIG"
+       fi
+       done < "$PATCHED"
 
+       grep -q '^CONFIG_CAN_USB_CAN_2=' "$BASE_CONFIG" || echo 'CONFIG_CAN_USB_CAN_2=m' >> "$BASE_CONFIG"
+       grep -q '^CONFIG_USB_CAN_2=' "$BASE_CONFIG" || echo 'CONFIG_USB_CAN_2=m' >> "$BASE_CONFIG"
+  
     - name: 🩹 Disable ABI Check in Makefiles
       run: |
        grep -rl 'abi_symbollist.raw' $KERNEL_DIR | while read file; do
