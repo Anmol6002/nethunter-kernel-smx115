@@ -20,7 +20,7 @@ jobs:
         echo "SUBARCH=arm64" >> $GITHUB_ENV
         echo "CROSS_COMPILE=$HOME/gcc-arm64/bin/aarch64-elf-" >> $GITHUB_ENV
 
-    - name: Clone arter97 arm64 GCC toolchain
+    - name: Clone radcolor aarch64-elf GCC toolchain
       run: |
         git clone --depth=1 https://github.com/radcolor/aarch64-elf $HOME/gcc-arm64
    
@@ -69,24 +69,29 @@ jobs:
         curl -Lo include/uapi/linux/can/isotp.h https://raw.githubusercontent.com/V0lk3n/can-isotp/master/include/uapi/linux/can/isotp.h
         grep -q "CAN_ISOTP_CF_BROADCAST" include/uapi/linux/can/isotp.h || echo '#define CAN_ISOTP_CF_BROADCAST 0x80' >> include/uapi/linux/can/isotp.h
 
-    - name: Merge patched defconfig into base (no duplicates)
+    - name: 🧩 Merge NetHunter Patches into Kernel defconfig
       run: |
-       BASE_CONFIG="$KERNEL_DIR/arch/arm64/configs/gta9_defconfig"
-       PATCHED="$GITHUB_WORKSPACE/gta9_defconfig_patched.config"
-       [ -f "$BASE_CONFIG" ] || (echo "Base config missing!" && exit 1)
-       while read -r line; do
-       [[ -z "$line" || "$line" =~ ^# ]] && continue
-       key=$(echo "$line" | cut -d= -f1)
-       if grep -q "^$key=" "$BASE_CONFIG"; then
-        sed -i "s|^$key=.*|$line|" "$BASE_CONFIG"
-       else
-        echo "$line" >> "$BASE_CONFIG"
-       fi
-       done < "$PATCHED"
+       cd $KERNEL_DIR
 
-       grep -q '^CONFIG_CAN_USB_CAN_2=' "$BASE_CONFIG" || echo 'CONFIG_CAN_USB_CAN_2=m' >> "$BASE_CONFIG"
-       grep -q '^CONFIG_USB_CAN_2=' "$BASE_CONFIG" || echo 'CONFIG_USB_CAN_2=m' >> "$BASE_CONFIG"
-  
+       export ARCH=arm64
+       export SUBARCH=arm64
+       export CROSS_COMPILE=${TOOLCHAIN_DIR}/bin/aarch64-elf-
+
+       echo "🧹 Resetting original defconfig"
+       make O=$OUT_DIR gta9_defconfig
+       echo "🧩 Merging NetHunter config..."
+       cp $GITHUB_WORKSPACE/gta9_defconfig_patched.config $OUT_DIR/
+       make O=$OUT_DIR KCONFIG_CONFIG=$OUT_DIR/.config olddefconfig
+
+       bash scripts/kconfig/merge_config.sh -m $OUT_DIR/.config $OUT_DIR/gta9_defconfig_patched.config
+
+       echo "⚙️ Resolving final config..."
+       make O=$OUT_DIR olddefconfig
+
+       echo "💾 Saving merged config to gta9_defconfig"
+       cp $OUT_DIR/.config arch/arm64/configs/gta9_defconfig
+    
+
     - name: 🩹 Disable ABI Check in Makefiles
       run: |
        grep -rl 'abi_symbollist.raw' $KERNEL_DIR | while read file; do
@@ -100,10 +105,6 @@ jobs:
         mkdir -p $OUT_DIR
         make O=$OUT_DIR ARCH=arm64 CROSS_COMPILE=$CROSS_COMPILE gta9_defconfig
         make -j$(nproc) O=$OUT_DIR ARCH=arm64 CROSS_COMPILE=$CROSS_COMPILE
-
-    - name: Build modules
-      run: |
-        cd $KERNEL_DIR
         make -j$(nproc) O=$OUT_DIR ARCH=arm64 CROSS_COMPILE=$CROSS_COMPILE modules
         make -j$(nproc) O=$OUT_DIR ARCH=arm64 CROSS_COMPILE=$CROSS_COMPILE INSTALL_MOD_PATH=$OUT_DIR/modules modules_install
 
