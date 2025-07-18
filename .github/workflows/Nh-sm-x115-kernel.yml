@@ -79,35 +79,47 @@ jobs:
 
        echo "🧹 Resetting original defconfig"
        make O=$OUT_DIR gta9_defconfig
+
        echo "🧩 Merging NetHunter config..."
        cp $GITHUB_WORKSPACE/gta9_defconfig_patched.config $OUT_DIR/
-       make O=$OUT_DIR KCONFIG_CONFIG=$OUT_DIR/.config olddefconfig
+       bash scripts/kconfig/merge_config.sh -m $OUT_DIR/.config $OUT_DIR/gta9_defconfig_patched.config
 
+       echo "🧼 Cleaning build tree before resolving config"
+       make O=$OUT_DIR mrproper
+
+       echo "♻️ Rebuilding base defconfig"
+       make O=$OUT_DIR gta9_defconfig
+
+       echo "📎 Re-merging patched config"
+       cp $GITHUB_WORKSPACE/gta9_defconfig_patched.config $OUT_DIR/
        bash scripts/kconfig/merge_config.sh -m $OUT_DIR/.config $OUT_DIR/gta9_defconfig_patched.config
 
        echo "⚙️ Resolving final config..."
        make O=$OUT_DIR olddefconfig
 
        echo "💾 Saving merged config to gta9_defconfig"
-       cp $OUT_DIR/.config arch/arm64/configs/gta9_defconfig
-    
-
+       cp $OUT_DIR/.config arch/arm64/configs/gta9_defconfig  
+     
     - name: 🩹 Disable ABI Check in Makefiles
       run: |
        grep -rl 'abi_symbollist.raw' $KERNEL_DIR | while read file; do
        echo "Disabling ABI check in $file"
        sed -i '/abi_symbollist.raw/ s/^/#/' "$file"
        done
-    
+
     - name: Build kernel
       run: |
-        cd $KERNEL_DIR
-        mkdir -p $OUT_DIR
-        make O=$OUT_DIR ARCH=arm64 CROSS_COMPILE=$CROSS_COMPILE gta9_defconfig
-        make -j$(nproc) O=$OUT_DIR ARCH=arm64 CROSS_COMPILE=$CROSS_COMPILE
-        make -j$(nproc) O=$OUT_DIR ARCH=arm64 CROSS_COMPILE=$CROSS_COMPILE modules
-        make -j$(nproc) O=$OUT_DIR ARCH=arm64 CROSS_COMPILE=$CROSS_COMPILE INSTALL_MOD_PATH=$OUT_DIR/modules modules_install
-
+       cd $KERNEL_DIR
+       mkdir -p $OUT_DIR
+       echo "Using defconfig..."
+       make O=$OUT_DIR ARCH=arm64 CROSS_COMPILE=$CROSS_COMPILE gta9_defconfig
+       echo "Building kernel image..."
+       make -j$(nproc) O=$OUT_DIR ARCH=arm64 CROSS_COMPILE=$CROSS_COMPILE
+       echo "Building kernel modules..."
+       make -j$(nproc) O=$OUT_DIR ARCH=arm64 CROSS_COMPILE=$CROSS_COMPILE modules
+       echo "Installing modules..."
+       make -j$(nproc) O=$OUT_DIR ARCH=arm64 CROSS_COMPILE=$CROSS_COMPILE INSTALL_MOD_PATH=$OUT_DIR/modules modules_install
+    
     - name: Archive output
       run: |
         cd $OUT_DIR
