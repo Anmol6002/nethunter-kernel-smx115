@@ -99,24 +99,24 @@ jobs:
        export CROSS_COMPILE=${TOOLCHAIN_DIR}/bin/aarch64-elf-
 
        echo "🧹 Resetting original defconfig"
-       make O=$OUT_DIR gta9_defconfig
+       make gta9_defconfig
 
        echo "🧩 Merging NetHunter config..."
        cp $GITHUB_WORKSPACE/gta9_defconfig_patched.config $OUT_DIR/
        bash scripts/kconfig/merge_config.sh -m $OUT_DIR/.config $OUT_DIR/gta9_defconfig_patched.config
 
        echo "⚙️ Resolving final config..."
-       make O=$OUT_DIR olddefconfig
+       make olddefconfig
 
        echo "💾 Saving merged config to gta9_defconfig"
-       cp $OUT_DIR/.config arch/arm64/configs/gta9_defconfig  
+       cp .config arch/arm64/configs/gta9_defconfig  
   
     - name: 🧹 Clean Tree (mrproper)
       run: |
        cd $KERNEL_DIR
        export ARCH=arm64
        export SUBARCH=arm64
-       make O=$OUT_DIR mrproper 
+       make mrproper 
 
     - name: Build kernel
       run: |
