@@ -127,14 +127,14 @@ jobs:
        export CROSS_COMPILE=${TOOLCHAIN_DIR}/bin/aarch64-elf-
        
        echo "Using merged gta9_defconfig..."
-       cp arch/arm64/configs/gta9_defconfig out/.config
-       make O=$OUT_DIR olddefconfig
+       
+       make O=$OUT_DIR gta9_defconfig
        echo "starting kernel build..."
        make -j$(nproc) O=$OUT_DIR \
        CROSS_COMPILE=${TOOLCHAIN_DIR}/bin/aarch64-elf- \
        
        echo "attempting module install..."
-       make -j$(nproc) O=$OUT_DIR  INSTALL_MOD_PATH=$OUT_DIR/modules modules_install
+       make O=$OUT_DIR  INSTALL_MOD_PATH=$OUT_DIR/modules modules_install
         
     - name: Archive output
       run: |
