@@ -88,7 +88,7 @@ jobs:
        cd $KERNEL_DIR
        export ARCH=arm64
        export SUBARCH=arm64
-       make O=$OUT_DIR mrproper 
+       make mrproper 
 
     - name: 🧩 Merge NetHunter Patches into Kernel defconfig
       run: |
