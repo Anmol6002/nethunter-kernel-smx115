@@ -121,20 +121,13 @@ jobs:
     - name: Build kernel
       run: |
        cd $KERNEL_DIR
-       mkdir -p $OUT_DIR
+       
        export ARCH=arm64
        export SUBARCH=arm64
        export CROSS_COMPILE=${TOOLCHAIN_DIR}/bin/aarch64-elf-
-       
-       echo "Using merged gta9_defconfig..."
-       
-       make O=$OUT_DIR gta9_defconfig
-       echo "starting kernel build..."
-       make -j$(nproc) O=$OUT_DIR \
-       CROSS_COMPILE=${TOOLCHAIN_DIR}/bin/aarch64-elf- \
-       
-       echo "attempting module install..."
-       make O=$OUT_DIR  INSTALL_MOD_PATH=$OUT_DIR/modules modules_install
+       make  gta9_defconfig
+       make -j$(nproc)  \
+ 
         
     - name: Archive output
       run: |
