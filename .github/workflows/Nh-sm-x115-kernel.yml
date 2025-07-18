@@ -129,13 +129,15 @@ jobs:
        (while true; do echo "⏳ Building kernel... $(date)"; sleep 60; done) &
        KEEP_ALIVE_PID=$!
        
-       make -j4 O=$OUT_DIR ARCH=arm64 CROSS_COMPILE=$CROSS_COMPILE
+       make -j$(nproc) O=$OUT_DIR ARCH=arm64 CROSS_COMPILE=$CROSS_COMPILE
        kill $KEEP_ALIVE_PID
-       echo "Building kernel modules..."
-       make -j4 O=$OUT_DIR ARCH=arm64 CROSS_COMPILE=$CROSS_COMPILE modules
-       echo "Installing modules..."
-       make -j4 O=$OUT_DIR ARCH=arm64 CROSS_COMPILE=$CROSS_COMPILE INSTALL_MOD_PATH=$OUT_DIR/modules modules_install
-    
+       
+    - name: Build modules
+      run: |
+        cd $KERNEL_DIR
+        make -j$(nproc) O=$OUT_DIR ARCH=arm64 CROSS_COMPILE=$CROSS_COMPILE modules
+        make -j$(nproc) O=$OUT_DIR ARCH=arm64 CROSS_COMPILE=$CROSS_COMPILE INSTALL_MOD_PATH=$OUT_DIR/modules modules_install
+        
     - name: Archive output
       run: |
         cd $OUT_DIR
