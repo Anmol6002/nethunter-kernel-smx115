@@ -110,7 +110,14 @@ jobs:
 
        echo "💾 Saving merged config to gta9_defconfig"
        cp .config arch/arm64/configs/gta9_defconfig  
-  
+
+    - name: 🧹 Clean Tree (mrproper)
+      run: |
+       cd $KERNEL_DIR
+       export ARCH=arm64
+       export SUBARCH=arm64
+       make mrproper 
+       
     - name: Build kernel
       run: |
        cd $KERNEL_DIR
